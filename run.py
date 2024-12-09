@@ -34,7 +34,9 @@ def display_model_stats(model : Transformer):
     print(colored('Transformer model summary:', 'green', attrs=['bold', 'underline']))
     for layer_name, params in model.named_parameters():
         print(layer_name, params.shape)
+    print('\n'*2)
 
+    torchinfo.summary(model)
     print('\n'*2)
 
 # Function to check the number of CPU cores and GPUs

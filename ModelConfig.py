@@ -25,9 +25,9 @@ class LangModelConfig(ModelConfig):
             "lang_src": "en",
             "lang_tgt": "fr",
             "preload": "latest",
-            "tokenizer_dir" : "tokenizers/opus_books_en_fr",
-            "model_dir"     : "models/opus_books_en_fr",
-            "test_name": "runs/opus_books_en_fr"
+            "tokenizer_dir" : "model_data/opus_books_en_fr/tokens",
+            "model_dir"     : "model_data/opus_books_en_fr/weights",
+            "test_name": "model_data/opus_books_en_fr/runs"
         }
 
     # get configuration public method

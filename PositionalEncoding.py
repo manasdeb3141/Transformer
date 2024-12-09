@@ -34,7 +34,23 @@ class PositionalEncoding(nn.Module):
 
 
     def forward(self, x):
+        #
         # Add the positional encoding vector to the input embedding vector
+        # Note that x is the output of the InputEmbeddings layer and has 
+        # the dimensions (batch_len, seq_len, d_model).  Therefore x.shape[1]
+        # is equal to seq_len.
+        #
+        # Ignoring the batch dimension for a moment, each element of x along 
+        # the seq_len (i.e. row) dimension is an InputEmbedding row vector of
+        # length d_model. There are 'seq_len' number of rows in x and pos_enc
+        # matrices.
+        #
+        # The following line adds a PositionalEncoding vector of length d_model
+        # to the InputEmbedding vector. In other words, a specific row of the 
+        # PositionalEncoding matrix gets added to the row of the matrix x, based 
+        # on the row index. The row index is the position of the token in the 
+        # sentence of length seq_len.
+        #
         x = x + (self._pos_enc[:, :x.shape[1], :]).requires_grad_(False)
         return self._dropout(x)
 
