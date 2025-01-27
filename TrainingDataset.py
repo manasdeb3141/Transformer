@@ -19,7 +19,7 @@ from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
-# Classes defined by this implementation
+# Classes defined by this application
 from BilingualDataset import BilingualDataset
 
 SOS_EOS_TOKEN_LEN = 2
@@ -33,6 +33,7 @@ class TrainingDataset:
         self._tokenizer_tgt = None
         self._train_dataloader = None
         self._val_dataloader = None
+        self._val_dataset = None
 
     def __get_sentences(self, ds : Dataset, lang : str) -> str:
         for item in ds:
@@ -105,6 +106,9 @@ class TrainingDataset:
         val_ds_size = ds_raw_len - train_ds_size
         train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
 
+        # Save the validation dataset for probing the Transformer
+        self._val_dataset = val_ds_raw
+
         # Create the Bilingual dataset
         train_ds = BilingualDataset(train_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, seq_len)
         val_ds = BilingualDataset(val_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, seq_len)
@@ -115,6 +119,7 @@ class TrainingDataset:
         dataset_dict = {
             "train_dataloader" : self._train_dataloader,
             "val_dataloader"   : self._val_dataloader,
+            "val_dataset"      : self._val_dataset,
             "src_tokenizer"    : self._tokenizer_src,
             "tgt_tokenizer"    : self._tokenizer_tgt,
             "max_len_src"      : max_len_src,

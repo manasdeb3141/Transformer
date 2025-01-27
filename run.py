@@ -20,6 +20,8 @@ from TrainingDataset import TrainingDataset
 from ModelConfig import LangModelConfig
 from ModelTrainer import ModelTrainer
 from LanguageTranslator import LanguageTranslator
+from TransformerProbe import TransformerProbe
+from TransformerAnalyzer import TransformerAnalyzer
 
 def display_model_stats(model : Transformer):
     print("\n")
@@ -73,125 +75,147 @@ def check_system() -> bool:
 
 # Main function of this script
 def main():
-    usage_msg = "Please specify if you want to train the Transformer model or run it as a language translator"
+    usage_msg = "Please specify a valid mode to run the Transformer model"
 
     # Support command line arguments to train and translate
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", help="Train the Transformer model", action="store_true")
     parser.add_argument("--trans", help="Run the Tranformer model as a language translator", action="store_true")
+    parser.add_argument("--probe", help="Probe the layers of each epoc of the Tranformer model with the validation data", action="store_true")
+    parser.add_argument("--analyze", help="Analyze the Transformer model probes", action="store_true")
 
     # Parse the argument
     args = parser.parse_args()
 
-    if args.train or args.trans:
-        # Check if the GPU is available
-        cuda_is_avail = check_system()
-        device = torch.device("cuda:0" if cuda_is_avail else "cpu")
+    # Check if the GPU is available
+    cuda_is_avail = check_system()
+    device = torch.device("cuda:0" if cuda_is_avail else "cpu")
 
-        # Get the model configuration
-        cfg_obj = LangModelConfig()
-        model_config = cfg_obj.get_config()
+    # Get the model configuration
+    cfg_obj = LangModelConfig()
+    model_config = cfg_obj.get_config()
 
-        if args.train:   
-            #
-            # Train the Transformer model
-            #
+    if args.train:   
+        #
+        # Train the Transformer model
+        #
 
-            # Default hyperparameters of the Transformer model
-            source_vocab_size = 1000
-            target_vocab_size = 1000
-            source_sequence_len = 100
-            target_sequence_len = 100
-            d_model = 512
+        # Default hyperparameters of the Transformer model
+        source_vocab_size = 1000
+        target_vocab_size = 1000
+        source_sequence_len = 100
+        target_sequence_len = 100
+        d_model = 512
 
-            # Get the source and target language datset and tokens
-            train_ds = TrainingDataset()
-            ds_dict = train_ds.get_language_dataset(model_config)
+        # Get the source and target language datset and tokens
+        train_ds = TrainingDataset()
+        ds_dict = train_ds.get_language_dataset(model_config)
 
-            max_seq_len_src = ds_dict["max_len_src"]
-            max_seq_len_tgt = ds_dict["max_len_tgt"]
+        max_seq_len_src = ds_dict["max_len_src"]
+        max_seq_len_tgt = ds_dict["max_len_tgt"]
 
-            # Get the source and target vocabulary size
-            # Set the other Transformer model parameters
-            # according to the configuration dictionary
-            source_vocab_size = train_ds.src_vocab_size()
-            target_vocab_size = train_ds.tgt_vocab_size()
-            source_sequence_len = model_config["seq_len"]
-            target_sequence_len = model_config["seq_len"]
-            d_model = model_config["d_model"]
+        # Get the source and target vocabulary size
+        # Set the other Transformer model parameters
+        # according to the configuration dictionary
+        source_vocab_size = train_ds.src_vocab_size()
+        target_vocab_size = train_ds.tgt_vocab_size()
+        source_sequence_len = model_config["seq_len"]
+        target_sequence_len = model_config["seq_len"]
+        d_model = model_config["d_model"]
 
-            print(f"source: vocab_size = {source_vocab_size}, max_sequence_len = {max_seq_len_src}")
-            print(f"target: vocab_size = {target_vocab_size}, max_sequence_len = {max_seq_len_tgt}")
+        print(f"source: vocab_size = {source_vocab_size}, max_sequence_len = {max_seq_len_src}")
+        print(f"target: vocab_size = {target_vocab_size}, max_sequence_len = {max_seq_len_tgt}")
 
-            # Create the Transformer model
-            transf_model = Transformer(source_vocab_size = source_vocab_size, 
-                                    target_vocab_size = target_vocab_size,
-                                    source_sequence_len = source_sequence_len, 
-                                    target_sequence_len = target_sequence_len,
-                                    d_model = d_model)
+        # Create the Transformer model
+        transf_model = Transformer(source_vocab_size = source_vocab_size, 
+                                target_vocab_size = target_vocab_size,
+                                source_sequence_len = source_sequence_len, 
+                                target_sequence_len = target_sequence_len,
+                                d_model = d_model)
 
-            display_model_stats(transf_model)
+        display_model_stats(transf_model)
 
-            # Train the transformer model as a language translator
-            transf_trainer = ModelTrainer(device, transf_model.to(device))
-            transf_trainer.train(model_config, ds_dict)
-        elif args.trans:
-            #
-            # Run the Transformer model as a translator
-            #
+        # Train the transformer model as a language translator
+        transf_trainer = ModelTrainer(device, transf_model.to(device))
+        transf_trainer.train(model_config, ds_dict)
+    elif args.trans:
+        #
+        # Run the Transformer model as a translator
+        #
 
-            source_sequence_len = model_config["seq_len"]
-            target_sequence_len = model_config["seq_len"]
-            d_model = model_config["d_model"]
+        source_sequence_len = model_config["seq_len"]
+        target_sequence_len = model_config["seq_len"]
+        d_model = model_config["d_model"]
 
-            # Create the translator object and load the tokenizer 
-            lang_translator = LanguageTranslator(device)
-            lang_translator.load_tokenizer(model_config)
+        # Create the translator object and load the tokenizer 
+        lang_translator = LanguageTranslator(device)
+        lang_translator.load_tokenizer(model_config)
 
-            source_vocab_size = lang_translator.get_vocab_size("src")
-            target_vocab_size = lang_translator.get_vocab_size("tgt")
+        source_vocab_size = lang_translator.get_vocab_size("src")
+        target_vocab_size = lang_translator.get_vocab_size("tgt")
 
-            print(f"source: vocab_size = {source_vocab_size}")
-            print(f"target: vocab_size = {target_vocab_size}")
+        print(f"source: vocab_size = {source_vocab_size}")
+        print(f"target: vocab_size = {target_vocab_size}")
 
-            # Create the Transformer model
-            transf_model = Transformer(source_vocab_size = source_vocab_size,
-                                    target_vocab_size = target_vocab_size,
-                                    source_sequence_len = source_sequence_len, 
-                                    target_sequence_len = target_sequence_len,
-                                    d_model = d_model)
+        # Create the Transformer model
+        transf_model = Transformer(source_vocab_size = source_vocab_size,
+                                target_vocab_size = target_vocab_size,
+                                source_sequence_len = source_sequence_len, 
+                                target_sequence_len = target_sequence_len,
+                                d_model = d_model)
 
-            display_model_stats(transf_model)
+        display_model_stats(transf_model)
 
-            # Load the trained model weights
-            if lang_translator.load_model_weights(model_config, transf_model.to(device)) == False:
-                print("ERROR loading the Transformer model!")
-                return
-
-            while True:
-                try:
-                    print("\n")
-                    input_sentence = input("Enter the input sentence (CTRL+C to exit): ")
-                    input_sentence = input_sentence.strip()
-                    print(f"INPUT       : {input_sentence}")
-                    print(f"TRANSLATION :", end=' ')
-                    trans_tok = lang_translator.translate(input_sentence)
-                    print("")
-                except EOFError:
-                    print("\n")
-                    print("Exiting")
-                    sys.exit()
-                    return
-                except KeyboardInterrupt:
-                    print("\n")
-                    print("Exiting")
-                    sys.exit()
-                    return
-        else:
-            pass
-            print(usage_msg)
-            parser.print_help()
+        # Load the trained model weights
+        if lang_translator.load_model_weights(model_config, transf_model.to(device)) == False:
+            print("ERROR loading the Transformer model!")
             return
+
+        # Continuously prompts the user for input text and translates
+        # and prints the translated text until the user hits CTRL+C
+        lang_translator.run()
+    elif args.probe:
+        #
+        # Probe the layers of the Transformer with the validation data
+        #
+        print("Probing the Transformer layers with the validation dataset ...")
+
+        source_sequence_len = model_config["seq_len"]
+        target_sequence_len = model_config["seq_len"]
+        d_model = model_config["d_model"]
+
+        # Dictionary of probe file names
+        model_probes = cfg_obj.get_probes()
+
+        # Create the probe object and load the tokenizer 
+        probe = TransformerProbe(device)
+        probe.load_tokenizer(model_config)
+
+        source_vocab_size = probe.get_vocab_size("src")
+        target_vocab_size = probe.get_vocab_size("tgt")
+
+        print(f"source: vocab_size = {source_vocab_size}")
+        print(f"target: vocab_size = {target_vocab_size}")
+
+        # Create the Transformer model
+        transf_model = Transformer(source_vocab_size = source_vocab_size,
+                                target_vocab_size = target_vocab_size,
+                                source_sequence_len = source_sequence_len, 
+                                target_sequence_len = target_sequence_len,
+                                d_model = d_model)
+
+        display_model_stats(transf_model)
+
+        # Loads the model weights for the different epochs, runs the validation dataset
+        # through each load and saves the salient Tensors to disk for offline analysis
+        probe.run(transf_model.to(device), model_config, model_probes)
+    elif args.analyze:
+        # Dictionary of probe file names
+        model_probes = cfg_obj.get_probes()
+
+        # Analyze the Transformer probes
+        analyzer = TransformerAnalyzer(model_config, model_probes)
+        analyzer.run()
     else:
         print(usage_msg)
         parser.print_help()

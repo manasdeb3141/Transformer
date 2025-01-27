@@ -171,6 +171,7 @@ class ModelTrainer:
         self._val_dataloader = ds_dict['val_dataloader']
         self._src_tokenizer = ds_dict['src_tokenizer']
         self._tgt_tokenizer = ds_dict['tgt_tokenizer']
+        val_dataset = ds_dict["val_dataset"]
 
         # Get the model configuration parameters
         lr = config['lr']
@@ -179,12 +180,16 @@ class ModelTrainer:
         num_epochs = config['num_epochs']
         self._seq_len = config['seq_len']
         model_folder = config["model_dir"]
+        dataset_folder = config["dataset_dir"]
 
         # Model optimizer
         self._optimizer = torch.optim.Adam(self._model.parameters(), lr=lr, eps=1e-9)
 
         # Directory for loading/storing the model weights
         model_dir = Path(model_folder)
+
+        # Directory for storing the model validation dataset
+        dataset_dir = Path(dataset_folder)
 
         if model_dir.exists():
             if preload_file == None:
@@ -198,10 +203,14 @@ class ModelTrainer:
                     print("Unable to find or load model weights. Training the model from scratch ...")
                     shutil.rmtree(model_dir)
 
-            
-        # If the model directory does not exist, then create it.
-        # Otherwise, don't do anything
-        model_dir.mkdir(parents=True, exist_ok=True)
+        # If the model or dataset directories do not exist, then create it.
+        if model_dir.exists() == False:
+            model_dir.mkdir(parents=True, exist_ok=True)
+
+        # Only the validation dataset is saved here so that it can be used
+        # for probing the Transformer after the training is complete
+        if dataset_dir.exists() == False:
+            dataset_dir.mkdir(parents=True, exist_ok=True)
 
         # Tensorboard writer
         self._writer = SummaryWriter(test_name)
@@ -257,3 +266,10 @@ class ModelTrainer:
                 'global_step'          : self._global_step
             }
             torch.save(model_save_dict, model_filename)
+
+            # If this is the first training epoch then save the validation dataset
+            dataset_filename = dataset_dir / "validation_data.pt"
+            if epoch == 0:
+                torch.save(val_dataset, dataset_filename)
+
+        self._writer.close()

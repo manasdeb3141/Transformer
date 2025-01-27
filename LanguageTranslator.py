@@ -75,7 +75,7 @@ class LanguageTranslator:
                 return False
 
         # Load the model weights
-        print(f"Preloading model file: {str(preload_file_path)}")
+        print(f"Loading model file: {str(preload_file_path)}")
         state = torch.load(str(preload_file_path))
         self._model.load_state_dict(state['model_state_dict'])
 
@@ -123,4 +123,22 @@ class LanguageTranslator:
             
         return self._tokenizer_tgt.decode(decoder_input[0].tolist())
 
+    def run(self) -> None:
+        while True:
+            try:
+                print("\n")
+                input_sentence = input("Enter the input sentence (CTRL+C to exit): ")
+                input_sentence = input_sentence.strip()
+                print(f"INPUT       : {input_sentence}")
+                print(f"TRANSLATION :", end=' ')
+                trans_tok = self.translate(input_sentence)
+                print("")
+            except EOFError:
+                print("\n")
+                print("Exiting")
+                return
+            except KeyboardInterrupt:
+                print("\n")
+                print("Exiting")
+                return
 
