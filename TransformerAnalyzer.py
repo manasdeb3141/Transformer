@@ -13,14 +13,14 @@ from ProbeManager import ProbeManager
 
 class TransformerAnalyzer:
     # Constructor
-    def __init__(self, config : dict, probes : dict) -> None:
+    def __init__(self, config : dict, probe_config : dict) -> None:
         super().__init__()
         # Get the model configuration parameters
         self._seq_len = config["seq_len"]
         self._d_model = config["d_model"]
         self._N_epochs = config["num_epochs"]
         self._probe_folder = config["probe_dir"]
-        self._model_probes = probes
+        self._probe_config = probe_config
 
         # Embedding layer probes
         self._embedding_probe = ProbeManager()
@@ -38,7 +38,7 @@ class TransformerAnalyzer:
             raise RuntimeError(f"Probe directory {str(probe_dir)} does not exist")
             
         for epoch in range(self._N_epochs):
-            self._embedding_probe.load(epoch, probe_dir, self._model_probes["enc_embed_layer"])
-            self._enc_0_attn_probe.load(epoch, probe_dir, self._model_probes["enc_layer_0_attn"])
+            self._embedding_probe.load(epoch, probe_dir, self._probe_config["enc_embed_layer"])
+            self._enc_0_attn_probe.load(epoch, probe_dir, self._probe_config["enc_layer_0_attn"])
 
 

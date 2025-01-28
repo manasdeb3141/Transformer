@@ -37,12 +37,26 @@ class LangModelConfig(ModelConfig):
         }
 
         self._probes = {
+            # Encoder
             "enc_embed_layer" : "enc_embedding_probe",
-            "enc_layer_0_attn": "enc0_multi_head_probe",
+            "enc_layer_0_attn": "enc0_self_attn_probe",
             "enc_layer_0_feedforward": "enc0_feedforward_probe",
-            "enc_layer_5_attn": "enc5_multi_head_probe",
+            "enc_layer_5_attn": "enc5_self_attn_probe",
             "enc_layer_5_feedforward": "enc5_feedforward_probe",
-            "enc_block_probe": "encoder_probe"
+            "enc_block": "encoder_probe",
+
+            # Decoder
+            "dec_embed_layer" : "dec_embedding_probe",
+            "dec_layer_0_attn": "dec0_self_attn_probe",
+            "dec_layer_0_cross_attn": "dec0_cross_attn_probe",
+            "dec_layer_0_feedforward": "dec0_feedforward_probe",
+            "dec_layer_5_attn": "dec5_self_attn_probe",
+            "dec_layer_5_cross_attn": "dec5_cross_attn_probe",
+            "dec_layer_5_feedforward": "dec5_feedforward_probe",
+            "dec_block": "decoder_probe",
+            
+            # Projection Layer
+            "proj_layer": "projection_probe"
         }
 
     # get configuration public method

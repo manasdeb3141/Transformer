@@ -1,5 +1,6 @@
 # Implementation of the TransformerProbe class
 
+import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 import os
@@ -7,6 +8,7 @@ from typing import Tuple
 import shutil
 import torch
 import torchmetrics.text
+from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 
@@ -41,7 +43,7 @@ test_vocab = [
 
 class TransformerProbe:
     # Constants
-    MAX_PROBE_INPUT_DATA = 100
+    MAX_PROBE_INPUT_DATA = 256
     
     # Constructor
     def __init__(self, device : torch.device) -> None:
@@ -54,33 +56,120 @@ class TransformerProbe:
         self._seq_len = 0
         self._d_model = 0
         self._model = None
+        self._writer = None
         self._val_dataloader = None
         self._global_step = 0
-        self._writer = None
 
         # Performance metrics
         self._cer_list = list()
         self._wer_list = list()
         self._bleu_list = list()
 
-        self._enc_embedding_probe = None        # Encoder's embedding layer probe
-        self._enc_0_attn_probe = None           # Encoder 0 attention layer probe
-        self._enc_0_feedforward_probe = None    # Encoder 0 feedforward layer probe
-        self._enc_5_attn_probe = None           # Encoder 5 attention layer probe
-        self._enc_5_feedforward_probe = None    # Encoder 5 feedforward layer probe
-        self._encoder_probe = None              # Encoder block's input and output probe
+    def __create_probes(self, N_inputs) -> None:
+        # Encoder probe objects
+        self._enc_embedding_probe = ProbeManager(N_inputs)          # Encoder's embedding layer probe
+        self._enc_0_attn_probe = ProbeManager(N_inputs)             # Encoder 0 attention layer probe
+        self._enc_0_feedforward_probe = ProbeManager(N_inputs)      # Encoder 0 feedforward layer probe
+        self._enc_5_attn_probe = ProbeManager(N_inputs)             # Encoder 5 attention layer probe
+        self._enc_5_feedforward_probe = ProbeManager(N_inputs)      # Encoder 5 feedforward layer probe
+        self._encoder_probe = ProbeManager(N_inputs)                # Encoder block's input and output probe
 
-        self._dec_embedding_probe = None        # Decoder's embedding layer probe
-        self._dec_0_attn_probe = None           # Decoder 0 attention layer probe
-        self._dec_0_cross_attn_probe = None     # Decoder 0 cross-attention layer probe
-        self._dec_0_feedforward_probe = None    # Decoder 0 feedforward layer probe
-        self._dec_5_attn_probe = None           # Decoder 5 attention layer probe
-        self._dec_5_cross_attn_probe = None     # Decoder 5 cross-attention layer probe
-        self._dec_5_feedforward_probe = None    # Decoder 5 feedforward layer probe
-        self._decoder_probe = None              # Decoder block's input and output probe
+        # Decoder probe objects
+        self._dec_embedding_probe = ProbeManager(N_inputs)          # Decoder's embedding layer probe
+        self._dec_0_attn_probe = ProbeManager(N_inputs)             # Decoder 0 attention layer probe
+        self._dec_0_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 0 cross-attention layer probe
+        self._dec_0_feedforward_probe = ProbeManager(N_inputs)      # Decoder 0 feedforward layer probe
+        self._dec_5_attn_probe = ProbeManager(N_inputs)             # Decoder 5 attention layer probe
+        self._dec_5_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 5 cross-attention layer probe
+        self._dec_5_feedforward_probe = ProbeManager(N_inputs)      # Decoder 5 feedforward layer probe
+        self._decoder_probe = ProbeManager(N_inputs)                # Decoder block's input and output probe
 
-        self._projection_probe = None           # Projection layer's input and output probe
+        # Projection layer probe object 
+        # (special probe to collect multiple inputs/outputs for each test input)
+        self._projection_probe = ProbeManager(N_inputs, True)
 
+    def __save_probes(self, epoch, probe_dir, probe_config) -> None:
+        # Save the current epoch's encoder probes
+        self._enc_embedding_probe.save(epoch, probe_dir, probe_config["enc_embed_layer"])
+        self._enc_embedding_probe.clear()
+        self._enc_0_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_0_attn"])
+        self._enc_0_attn_probe.clear()
+        self._enc_0_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_0_feedforward"])
+        self._enc_0_feedforward_probe.clear()
+        self._enc_5_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_5_attn"])
+        self._enc_5_attn_probe.clear()
+        self._enc_5_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_5_feedforward"])
+        self._enc_5_feedforward_probe.clear()
+        self._encoder_probe.save(epoch, probe_dir, probe_config["enc_block"]) 
+        self._encoder_probe.clear()
+
+        # Save the current epoch's decoder probes
+        self._dec_embedding_probe.save(epoch, probe_dir, probe_config["dec_embed_layer"])
+        self._dec_embedding_probe.clear()
+        self._dec_0_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_attn"])
+        self._dec_0_attn_probe.clear()
+        self._dec_0_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_cross_attn"])
+        self._dec_0_cross_attn_probe.clear()
+        self._dec_0_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_0_feedforward"])
+        self._dec_0_feedforward_probe.clear()
+        self._dec_5_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_attn"])
+        self._dec_5_attn_probe.clear()
+        self._dec_5_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_cross_attn"])
+        self._dec_5_cross_attn_probe.clear()
+        self._dec_5_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_5_feedforward"])
+        self._dec_5_feedforward_probe.clear()
+        self._decoder_probe.save(epoch, probe_dir, probe_config["dec_block"])
+        self._decoder_probe.clear()
+
+        # Save the current epoch's projection layer probe
+        self._projection_probe.save(epoch, probe_dir, probe_config["proj_layer"])
+        self._projection_probe.clear()
+
+    def __hook_modules(self) -> None:
+        # Encoder hooks
+        #
+        self._enc_embed_hook_handle = self._model._source_embed.register_forward_hook(self.enc_embedding_hook)
+        self._enc0_attn_hook_handle = self._model._encoder._layers[0]._self_attention.register_forward_hook(self.enc0_attention_hook)
+        self._enc0_feedforward_hook_handle = self._model._encoder._layers[0]._feed_forward.register_forward_hook(self.enc0_feedforward_hook)
+        self._enc5_attn_hook_handle = self._model._encoder._layers[5]._self_attention.register_forward_hook(self.enc5_attention_hook)
+        self._enc5_feedforward_hook_handle = self._model._encoder._layers[5]._feed_forward.register_forward_hook(self.enc5_feedforward_hook)
+        self._encoder_hook_handle = self._model._encoder.register_forward_hook(self.encoder_hook)
+
+        # Decoder hooks
+        self._dec_embed_hook_handle = self._model._target_embed.register_forward_hook(self.dec_embedding_hook)
+        self._dec0_attn_hook_handle = self._model._decoder._layers[0]._self_attention.register_forward_hook(self.dec0_attention_hook)
+        self._dec0_cross_attn_hook_handle = self._model._decoder._layers[0]._cross_attention.register_forward_hook(self.dec0_cross_attention_hook)
+        self._dec0_feedforward_hook_handle = self._model._decoder._layers[0]._feed_forward.register_forward_hook(self.dec0_feedforward_hook)
+        self._dec5_attn_hook_handle = self._model._decoder._layers[5]._self_attention.register_forward_hook(self.dec5_attention_hook)
+        self._dec5_cross_attn_hook_handle = self._model._decoder._layers[5]._cross_attention.register_forward_hook(self.dec5_cross_attention_hook)
+        self._dec5_feedforward_hook_handle = self._model._decoder._layers[5]._feed_forward.register_forward_hook(self.dec5_feedforward_hook)
+        self._decoder_hook_handle = self._model._decoder.register_forward_hook(self.decoder_hook)
+
+        # Projection layer hook
+        self._projection_hook_handle = self._model._projection.register_forward_hook(self.projection_hook)
+
+        
+    def __unhook_modules(self) -> None:
+        # Encoder hook cleanup
+        self._enc_embed_hook_handle.remove()
+        self._enc0_attn_hook_handle.remove()
+        self._enc0_feedforward_hook_handle.remove() 
+        self._enc5_attn_hook_handle.remove()
+        self._enc5_feedforward_hook_handle.remove() 
+        self._encoder_hook_handle.remove() 
+
+        # Decoder hook cleanup
+        self._dec_embed_hook_handle.remove()
+        self._dec0_attn_hook_handle.remove()
+        self._dec0_cross_attn_hook_handle.remove()
+        self._dec0_feedforward_hook_handle.remove()
+        self._dec5_attn_hook_handle.remove()
+        self._dec5_cross_attn_hook_handle.remove()
+        self._dec5_feedforward_hook_handle.remove()
+        self._decoder_hook_handle.remove()
+
+        # Projection hook cleanup
+        self._projection_hook_handle.remove()
 
     def load_tokenizer(self, config : dict):
         # Get the model configuration parameters
@@ -106,7 +195,7 @@ class TransformerProbe:
 
         return None 
 
-    def run(self, model : Transformer, config : dict, probes : dict) -> None:
+    def run(self, model : Transformer, config : dict, probe_config : dict) -> None:
         # Get the model configuration values
         key = "model_dir"
         if key in config:
@@ -145,31 +234,8 @@ class TransformerProbe:
         # accessed by other methods of this class
         self._model = model
 
-        #
         # Hook the specific layers of the model
-        #
-        #
-        # Encoder hooks
-        #
-        enc_embed_hook_handle = self._model._source_embed.register_forward_hook(self.enc_embedding_hook)
-        enc0_attn_hook_handle = self._model._encoder._layers[0]._self_attention.register_forward_hook(self.enc0_attention_hook)
-        enc0_feedforward_hook_handle = self._model._encoder._layers[0]._feed_forward.register_forward_hook(self.enc0_feedforward_hook)
-        enc5_attn_hook_handle = self._model._encoder._layers[5]._self_attention.register_forward_hook(self.enc5_attention_hook)
-        enc5_feedforward_hook_handle = self._model._encoder._layers[5]._feed_forward.register_forward_hook(self.enc5_feedforward_hook)
-        encoder_hook_handle = self._model._encoder.register_forward_hook(self.encoder_hook)
-
-        # Decoder hooks
-        dec_embed_hook_handle = self._model._target_embed.register_forward_hook(self.dec_embedding_hook)
-        dec0_attn_hook_handle = self._model._decoder._layers[0]._self_attention.register_forward_hook(self.dec0_attention_hook)
-        dec0_cross_attn_hook_handle = self._model._decoder._layers[0]._cross_attention.register_forward_hook(self.dec0_cross_attention_hook)
-        dec0_feedforward_hook_handle = self._model._decoder._layers[0]._feed_forward.register_forward_hook(self.dec0_feedforward_hook)
-        dec5_attn_hook_handle = self._model._decoder._layers[5]._self_attention.register_forward_hook(self.dec5_attention_hook)
-        dec5_cross_attn_hook_handle = self._model._decoder._layers[5]._cross_attention.register_forward_hook(self.dec5_cross_attention_hook)
-        dec5_feedforward_hook_handle = self._model._decoder._layers[5]._feed_forward.register_forward_hook(self.dec5_feedforward_hook)
-        decoder_hook_handle = self._model._decoder.register_forward_hook(self.decoder_hook)
-
-        # Projection layer hook
-        projection_hook_handle = self._model._projection.register_forward_hook(self.projection_hook)
+        self.__hook_modules()
 
         # Load the model validation raw dataset
         dataset_dir = Path(dataset_folder)
@@ -177,8 +243,8 @@ class TransformerProbe:
         val_ds_raw = torch.load(dataset_fname)
 
         # Create the Bilingual dataset from the raw dataset (batch size is 1 for the validation phase)
-        # val_ds = BilingualDataset(val_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
-        val_ds = BilingualDataset(test_vocab, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
+        val_ds = BilingualDataset(val_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
+        # val_ds = BilingualDataset(test_vocab, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
         self._val_dataloader = DataLoader(val_ds, batch_size=1, shuffle=True)
 
         # If it exists remove it and create it fresh
@@ -195,33 +261,15 @@ class TransformerProbe:
             # Create the directory for storing the model probes
             probe_dir.mkdir(parents=True)
 
-        # Override N_epochs for testing
-        # N_epochs = 2
-
         # Instantiate the probe classes which will in turn initialize the 
         # memory for storing the probes
         N_inputs = min(self.MAX_PROBE_INPUT_DATA, len(self._val_dataloader))
+        # N_inputs = len(self._val_dataloader)
+        self.__create_probes(N_inputs)
 
-        # Encoder probe objects
-        self._enc_embedding_probe = ProbeManager(N_inputs)
-        self._enc_0_attn_probe = ProbeManager(N_inputs)
-        self._enc_0_feedforward_probe = ProbeManager(N_inputs)
-        self._enc_5_attn_probe = ProbeManager(N_inputs)
-        self._enc_5_feedforward_probe = ProbeManager(N_inputs)
-        self._encoder_probe = ProbeManager(N_inputs)
-
-        # Decoder probe objects
-        self._dec_embedding_probe = ProbeManager(N_inputs)
-        self._dec_0_attn_probe = ProbeManager(N_inputs)
-        self._dec_0_cross_attn_probe = ProbeManager(N_inputs)
-        self._dec_0_feedforward_probe = ProbeManager(N_inputs)
-        self._dec_5_attn_probe = ProbeManager(N_inputs)
-        self._dec_5_cross_attn_probe = ProbeManager(N_inputs)
-        self._dec_5_feedforward_probe = ProbeManager(N_inputs)
-        self._decoder_probe = ProbeManager(N_inputs)
-
-        # Projection layer probe object
-        self._projection_probe = ProbeManager(N_inputs, True)
+        # Tensorboard writer
+        log_dir = probe_dir / "runs"
+        self._writer = SummaryWriter(log_dir)
 
         # Start the probing
         for epoch in range(N_epochs):
@@ -242,40 +290,47 @@ class TransformerProbe:
             # Run the validation dataset on the model
             self.__validate(epoch)
 
-            # Save the current epoch's probes
-            # self._enc_embedding_probe.save(epoch, probe_dir, probes["enc_embed_layer"])
-            # self._enc_0_attn_probe.save(epoch, probe_dir, probes["enc_layer_0_attn"])
-            # self._enc_0_feedforward_probe.save(epoch, probe_dir, probes["enc_layer_0_feedforward"])
-            # self._enc_5_attn_probe.save(epoch, probe_dir, probes["enc_layer_5_attn"])
-            # self._enc_5_feedforward_probe.save(epoch, probe_dir, probes["enc_layer_5_feedforward"])
-            # self._encoder_probe.save(epoch, probe_dir, probes["encoder_block_probe"])
+            # Save the probes for the current epoch
+            self.__save_probes(epoch, probe_dir, probe_config)
             
-        # Encoder hook cleanup
-        enc_embed_hook_handle.remove()
-        enc0_attn_hook_handle.remove()
-        enc0_feedforward_hook_handle.remove() 
-        enc5_attn_hook_handle.remove()
-        enc5_feedforward_hook_handle.remove() 
-        encoder_hook_handle.remove() 
+        # Hook cleanup
+        self.__unhook_modules()
 
-        # Decoder hook cleanup
-        dec_embed_hook_handle.remove()
-        dec0_attn_hook_handle.remove()
-        dec0_cross_attn_hook_handle.remove()
-        dec0_feedforward_hook_handle.remove()
-        dec5_attn_hook_handle.remove()
-        dec5_cross_attn_hook_handle.remove()
-        dec5_feedforward_hook_handle.remove()
-        decoder_hook_handle.remove()
+        # Close the Tensorboard summary file
+        if self._writer:
+            self._writer.close()
 
-        # Projection hook cleanup
-        projection_hook_handle.remove()
+        # Plot the performance metrics
+        show_plot = False
+        if show_plot:
+            x = list(range(1, len(self._cer_list)+1))
+            fig, ax = plt.subplots(1, 3)
+            ax[0].plot(x, self._cer_list)
+            ax[0].set_title('Character errors vs epoch')
+            ax[0].set_xlabel('Epoch')
+            ax[0].set_ylabel('Error')
+            ax[0].grid(True)
+
+            ax[1].plot(x, self._wer_list)
+            ax[1].set_title('Word errors vs epoch')
+            ax[1].set_xlabel('Epoch')
+            ax[1].set_ylabel('Error')
+            ax[1].grid(True)
+
+            ax[2].plot(x, self._bleu_list)
+            ax[2].set_title('BLEU score vs epoch')
+            ax[2].set_xlabel('Epoch')
+            ax[2].set_ylabel('Score')
+            ax[2].grid(True)
+            plt.show()
+
 
 
     # Generate a causal mask
     def __causal_mask(self, size : int) -> torch.Tensor:
         mask = torch.triu(torch.ones((1, size, size)), diagonal=1).type(torch.int)
         return mask == 0
+
 
     # Method to decode using a single encoder output
     def __greedy_decode(self, source, source_mask):
@@ -350,34 +405,44 @@ class TransformerProbe:
                     batch_iterator.write(f"{f'TARGET: ':>12}{target_text}")
                     batch_iterator.write(f"{f'PREDICTED: ':>12}{model_out_text}\n")
 
-                if self._input_count == max_validn_count:
+                if self._input_count == (max_validn_count-1):
                     batch_iterator.write('-'*80)
                     break
 
                 self._input_count += 1
 
+        # Compute the char error rate 
+        metric = torchmetrics.text.CharErrorRate()
+        cer = metric(predicted, expected)
+        self._cer_list.append(cer)
+
+        # Compute the word error rate
+        metric = torchmetrics.text.WordErrorRate()
+        wer = metric(predicted, expected)
+        self._wer_list.append(wer)
+
+        # Compute the BLEU metric
+        metric = torchmetrics.text.BLEUScore()
+        bleu = metric(predicted, expected)
+        self._bleu_list.append(bleu)
+
+        # Write to the Tensorboard summary file
         if self._writer:
-            # Compute the char error rate 
-            metric = torchmetrics.text.CharErrorRate()
-            cer = metric(predicted, expected)
-            self._cer_list.append(cer)
+            self._writer.add_scalar('validation cer', cer, self._global_step)
+            self._writer.flush()
 
-            # Compute the word error rate
-            metric = torchmetrics.text.WordErrorRate()
-            wer = metric(predicted, expected)
-            self._wer_list.append(cer)
+            self._writer.add_scalar('validation wer', wer, self._global_step)
+            self._writer.flush()
 
-            # Compute the BLEU metric
-            metric = torchmetrics.text.BLEUScore()
-            bleu = metric(predicted, expected)
-            self._bleu_list.append(cer)
+            self._writer.add_scalar('validation BLEU', bleu, self._global_step)
+            self._writer.flush()
 
     #
     # ------------------------------------ Hooks into the Transformer layers --------------------------------------------
     #
-    def __process_embedding_hook(self, module, input, output) -> Tuple[np.ndarray, np.ndarray]:
-        in_val = input[0].detach().cpu().numpy()        # shape = (1, seq_len)
-        out_val = output.detach().cpu().numpy()         # shape = (1, seq_len, d_model)
+    def __extract_input_output(self, input, output) -> Tuple[np.ndarray, np.ndarray]:
+        in_val = input[0].detach().cpu().numpy()
+        out_val = output.detach().cpu().numpy()
 
         return in_val, out_val
 
@@ -442,11 +507,6 @@ class TransformerProbe:
 
         return attn_head_in, attn_head_out
 
-    def __process_feedforward_hook(self, module, input, output) -> Tuple[np.ndarray, np.ndarray]:
-        in_val = input[0].detach().cpu().numpy()        # shape = (1, seq_len, d_model)
-        out_val = output.detach().cpu().numpy()         # shape = (1, seq_len, d_model)
-
-        return in_val, out_val
 
     def enc_embedding_hook(self, module, input, output) -> None:
         # input[0].shape = (1 ,seq_len, d_model) => (1, 350, 512)
@@ -454,7 +514,7 @@ class TransformerProbe:
         # print("Encoder's embedding hook called")
 
         # Common processing for all embedding layer hooks
-        in_val, out_val = self.__process_embedding_hook(module, input, output)
+        in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the embedding layer probe in memory
         self._enc_embedding_probe.add_probe(self._input_count, in_val, out_val)
@@ -481,7 +541,7 @@ class TransformerProbe:
         # print("Encoder layer 0 feedforward hook called")
 
         # Common processing for all feedforward layer hooks
-        in_val, out_val = self.__process_feedforward_hook(module, input, output)
+        in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
         self._enc_0_feedforward_probe.add_probe(self._input_count, in_val, out_val)
@@ -508,7 +568,7 @@ class TransformerProbe:
         # print("Encoder layer 5 feedforward hook called")
 
         # Common processing for all feedforward layer hooks
-        in_val, out_val = self.__process_feedforward_hook(module, input, output)
+        in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
         self._enc_5_feedforward_probe.add_probe(self._input_count, in_val, out_val)
@@ -519,8 +579,7 @@ class TransformerProbe:
         # output.shape   = (1, seq_len, d_model) => (1, 350, 512)
         # print("Encoder hook called")
 
-        in_val = input[0].detach().cpu().numpy()
-        out_val = output.detach().cpu().numpy()
+        in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the encoder block's input and output probes in memory
         self._encoder_probe.add_probe(self._input_count, in_val, out_val)
@@ -532,7 +591,7 @@ class TransformerProbe:
         # print("Decoder embedding hook called")
 
         # Common processing for all embedding layer hooks
-        in_val, out_val = self.__process_embedding_hook(module, input, output)
+        in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the embedding layer probe in memory
         self._dec_embedding_probe.add_probe(self._input_count, in_val, out_val)
@@ -573,7 +632,7 @@ class TransformerProbe:
         # print("Decoder layer 0 feedforward hook called")
 
         # Common processing for all feedforward layer hooks
-        in_val, out_val = self.__process_feedforward_hook(module, input, output)
+        in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
         self._dec_0_feedforward_probe.add_probe(self._input_count, in_val, out_val)
@@ -613,7 +672,7 @@ class TransformerProbe:
         # print("Decoder layer 5 feedforward hook called")
 
         # Common processing for all feedforward layer hooks
-        in_val, out_val = self.__process_feedforward_hook(module, input, output)
+        in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
         self._dec_5_feedforward_probe.add_probe(self._input_count, in_val, out_val)
@@ -626,12 +685,19 @@ class TransformerProbe:
         # input[3].shape = (1, x, x)
         # output.shape = (1, x, d_model) => (1, x, 512)
         # print("Decoder hook called")
-        
-        in_val = input[0].detach().cpu().numpy()
-        out_val = output.detach().cpu().numpy()
 
-        # Store the encoder block's input and output probes in memory
-        self._decoder_probe.add_probe(self._input_count, in_val, out_val)
+        decoder_in = dict(
+            decoder_in = input[0].detach().cpu().numpy(),
+            encoder_out = input[1].detach().cpu().numpy(),
+            src_mask = input[2].detach().cpu().numpy(),
+            tgt_mask = input[3].detach().cpu().numpy()
+        )
+
+        decoder_out = output.detach().cpu().numpy()    
+
+        # Store the decoder block's input and output probes in memory
+        self._decoder_probe.add_probe(self._input_count, decoder_in, decoder_out)
+
 
     def projection_hook(self, module, input, output) -> None:
         # input[0].shape = (1, d_model) => (1, 512)

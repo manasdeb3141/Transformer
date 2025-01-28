@@ -211,10 +211,10 @@ def main():
         probe.run(transf_model.to(device), model_config, model_probes)
     elif args.analyze:
         # Dictionary of probe file names
-        model_probes = cfg_obj.get_probes()
+        probe_config = cfg_obj.get_probes()
 
         # Analyze the Transformer probes
-        analyzer = TransformerAnalyzer(model_config, model_probes)
+        analyzer = TransformerAnalyzer(model_config, probe_config)
         analyzer.run()
     else:
         print(usage_msg)

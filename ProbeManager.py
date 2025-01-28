@@ -49,6 +49,27 @@ class ProbeManager:
         probe_dict = {'input' : self._probe_in, 'output' : self._probe_out, 'list_of_lists' : self._list_of_lists}
         torch.save(probe_dict, probe_fname)
 
+
+    def clear(self) -> None:
+        # Clear the list entries
+        N_inputs = len(self._probe_in)
+
+        if self._list_of_lists:
+            for i in range(N_inputs):
+                in_list = self._probe_in[i]
+                in_list.clear()
+
+                out_list = self._probe_out[i]
+                out_list.clear()
+        else:
+            self._probe_in.clear()
+            self._probe_out.clear()
+
+            for i in range(N_inputs):
+                self._probe_in.append(None)
+                self._probe_out.append(None) 
+
+
     def load(self, epoch, probe_dir, probe_name) -> None:
         epoch_probe_dir = probe_dir / f"epoch_{epoch:02d}"
         probe_fname = epoch_probe_dir / f"{probe_name}.pt"
