@@ -9,10 +9,11 @@ import shutil
 import torch
 import torchmetrics.text
 from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 from tqdm import tqdm
 
 # Huggingface datasets and tokenizers
+from datasets import load_dataset
 from tokenizers import Tokenizer
 
 # Definitions of the classes implemented by this application
@@ -21,7 +22,7 @@ from MultiheadAttention import MultiheadAttention
 from BilingualDataset import BilingualDataset
 from ProbeManager import ProbeManager
 
-test_vocab = [
+special_dataset = [
     { 
         "id" : 1,
         "translation": 
@@ -43,7 +44,7 @@ test_vocab = [
 
 class TransformerProbe:
     # Constants
-    MAX_PROBE_INPUT_DATA = 256
+    MAX_PROBE_INPUT_DATA = 50
     
     # Constructor
     def __init__(self, device : torch.device) -> None:
@@ -223,6 +224,8 @@ class TransformerProbe:
         self._seq_len = config["seq_len"]
         self._d_model = config["d_model"]
         N_epochs = config["num_epochs"]
+        datasource = config["datasource"]
+        use_special_dataset = config["use_special_dataset"]
 
         # Directory for loading the model weights
         model_dir = Path(model_folder)
@@ -237,17 +240,26 @@ class TransformerProbe:
         # Hook the specific layers of the model
         self.__hook_modules()
 
-        # Load the model validation raw dataset
-        dataset_dir = Path(dataset_folder)
-        dataset_fname = dataset_dir / "validation_data.pt"
-        val_ds_raw = torch.load(dataset_fname)
+        # Create the Bilingual dataset from the raw dataset (batch size is 1 for the validation run)
+        if use_special_dataset == 1:
+            # Specially crafted dataset
+            val_ds = BilingualDataset(special_dataset, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
+        else:
+            # Use the Huggingface dataset
+            ds_raw = load_dataset(datasource, f"{lang_src}-{lang_tgt}", split='train')
 
-        # Create the Bilingual dataset from the raw dataset (batch size is 1 for the validation phase)
-        val_ds = BilingualDataset(val_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
-        # val_ds = BilingualDataset(test_vocab, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
-        self._val_dataloader = DataLoader(val_ds, batch_size=1, shuffle=True)
+            # Split the dataset as training and validation. We will only use the validation dataset
+            ds_raw_len = len(ds_raw)
+            train_ds_size = ds_raw_len - self.MAX_PROBE_INPUT_DATA
+            val_ds_size = self.MAX_PROBE_INPUT_DATA
+            train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
 
-        # If it exists remove it and create it fresh
+            val_ds = BilingualDataset(val_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
+
+        self._val_dataloader = DataLoader(val_ds, batch_size=1, shuffle=False)
+
+        # If it exists clean the directory by removing all
+        # subdirectories
         probe_dir = Path(probe_folder)
         if probe_dir.exists():
             if probe_dir.is_dir() == False:
@@ -383,7 +395,11 @@ class TransformerProbe:
 
             for batch in batch_iterator:
                 encoder_input = batch['encoder_input'].to(self._device) # (batch_len, seq_len)
-                encoder_mask = batch['encoder_mask'].to(self._device) # (batch_len, 1, 1, seq_len)
+                encoder_mask = batch['encoder_mask'].to(self._device)   # (batch_len, 1, 1, seq_len)
+
+                # Strore the target tokens and mask as these will get saved in the encoder probe
+                self._label = batch['label']                            # (batch_len, seq_len)
+                self._decoder_mask = batch['decoder_mask']              # (batch_len, 1, 1, seq_len)
 
                 # check that the batch size is 1
                 assert encoder_input.size(0) == 1, "Batch size must be 1 for validation"
@@ -474,11 +490,6 @@ class TransformerProbe:
 
         x, attention_scores = MultiheadAttention.attention(query, key, value, mask, module._dropout)
 
-        # Store the length of the words in the sequence that are active
-        # mask_cpu = mask.detach().cpu()
-        # indices = torch.where(mask_cpu[0][0][0] == 1)
-        # active_mask = len(indices[0])
-
         attn_head_in = dict(
             # q, k, v have the following shape:
             # (1, seq_len, d_model) => (1, 350, 512)
@@ -487,7 +498,6 @@ class TransformerProbe:
             v = v.detach().cpu().numpy(),
 
             # scalar
-            # active_mask = active_mask,
             # This has shape (1, 1, 1, seq_len) => (1, 1, 1, 350)
             mask = mask.detach().cpu(),
 
@@ -513,11 +523,16 @@ class TransformerProbe:
         # output.shape = (1, seq_len, d_model) => (1, 350, 512)
         # print("Encoder's embedding hook called")
 
-        # Common processing for all embedding layer hooks
-        in_val, out_val = self.__extract_input_output(input, output)
+        enc_embedding_in = dict(
+            src_tokens = input[0].detach().cpu().numpy(),
+            tgt_tokens = self._label.numpy(),                         # shape = (1, seq_len) 
+            tgt_mask = np.squeeze(self._decoder_mask.numpy())[-1],    # shape = (seq_len,)
+        )
+
+        enc_embedding_out = output.detach().cpu().numpy()
 
         # Store the embedding layer probe in memory
-        self._enc_embedding_probe.add_probe(self._input_count, in_val, out_val)
+        self._enc_embedding_probe.add_probe(self._input_count, enc_embedding_in, enc_embedding_out)
 
 
     def enc0_attention_hook(self, module, input, output) -> None:
@@ -576,13 +591,19 @@ class TransformerProbe:
 
     def encoder_hook(self, module, input, output) -> None:
         # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[1].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
         # output.shape   = (1, seq_len, d_model) => (1, 350, 512)
         # print("Encoder hook called")
 
-        in_val, out_val = self.__extract_input_output(input, output)
+        encoder_in = dict(
+            x = input[0].detach().cpu().numpy(),
+            mask = input[1].detach().cpu().numpy()
+        )
+
+        encoder_out = output.detach().cpu().numpy()
 
         # Store the encoder block's input and output probes in memory
-        self._encoder_probe.add_probe(self._input_count, in_val, out_val)
+        self._encoder_probe.add_probe(self._input_count, encoder_in, encoder_out)
 
 
     def dec_embedding_hook(self, module, input, output) -> None:

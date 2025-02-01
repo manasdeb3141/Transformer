@@ -34,6 +34,8 @@ class LangModelConfig(ModelConfig):
             "test_name": "model_data/opus_books_en_fr/runs",
             "dataset_dir": "model_data/opus_books_en_fr/dataset",
             "probe_dir": "model_data/opus_books_en_fr/probes",
+            "analyze_dir": "model_data/opus_books_en_fr/probes_2",
+            "use_special_dataset" : 0
         }
 
         self._probes = {
