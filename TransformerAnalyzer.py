@@ -23,6 +23,8 @@ class TransformerAnalyzer:
         self._d_model = config["d_model"]
         self._N_epochs = config["num_epochs"]
         self._probe_dir = Path(config["analyze_dir"])
+        self._special_dataset_probe_dir = Path(config["special_dataset_analyze_dir"])
+        self._use_special_dataset = config["use_special_dataset"]
         self._lang_src = config["lang_src"]
         self._lang_tgt = config["lang_tgt"]
         self._tokenizer_dir = config["tokenizer_dir"]
@@ -65,34 +67,40 @@ class TransformerAnalyzer:
 
 
     def __load_probes(self, epoch) -> None:
+        if self._use_special_dataset == 1:
+            probe_dir = self._special_dataset_probe_dir
+        else:
+            probe_dir = self._probe_dir
+
         # Load the epoch's encoder probes
-        self._enc_embedding_probe.load(epoch, self._probe_dir, self._probe_config["enc_embed_layer"])
-        self._enc_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_attn"])
-        self._enc_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_feedforward"])
-        self._enc_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_attn"])
-        self._enc_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_feedforward"])
-        self._encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"]) 
+        self._enc_embedding_probe.load(epoch, probe_dir, self._probe_config["enc_embed_layer"])
+        self._enc_0_attn_probe.load(epoch, probe_dir, self._probe_config["enc_layer_0_attn"])
+        self._enc_0_feedforward_probe.load(epoch, probe_dir, self._probe_config["enc_layer_0_feedforward"])
+        self._enc_5_attn_probe.load(epoch, probe_dir, self._probe_config["enc_layer_5_attn"])
+        self._enc_5_feedforward_probe.load(epoch, probe_dir, self._probe_config["enc_layer_5_feedforward"])
+        self._encoder_probe.load(epoch, probe_dir, self._probe_config["enc_block"]) 
 
         # Load the epoch's decoder probes
-        self._dec_embedding_probe.load(epoch, self._probe_dir, self._probe_config["dec_embed_layer"])
-        self._dec_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_attn"])
-        self._dec_0_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_cross_attn"])
-        self._dec_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_feedforward"])
-        self._dec_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_attn"])
-        self._dec_5_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_cross_attn"])
-        self._dec_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_feedforward"])
-        self._decoder_probe.load(epoch, self._probe_dir, self._probe_config["dec_block"])
+        self._dec_embedding_probe.load(epoch, probe_dir, self._probe_config["dec_embed_layer"])
+        self._dec_0_attn_probe.load(epoch, probe_dir, self._probe_config["dec_layer_0_attn"])
+        self._dec_0_cross_attn_probe.load(epoch, probe_dir, self._probe_config["dec_layer_0_cross_attn"])
+        self._dec_0_feedforward_probe.load(epoch, probe_dir, self._probe_config["dec_layer_0_feedforward"])
+        self._dec_5_attn_probe.load(epoch, probe_dir, self._probe_config["dec_layer_5_attn"])
+        self._dec_5_cross_attn_probe.load(epoch, probe_dir, self._probe_config["dec_layer_5_cross_attn"])
+        self._dec_5_feedforward_probe.load(epoch, probe_dir, self._probe_config["dec_layer_5_feedforward"])
+        self._decoder_probe.load(epoch, probe_dir, self._probe_config["dec_block"])
 
         # Load the epoch's projection layer probe
-        self._projection_probe.load(epoch, self._probe_dir, self._probe_config["proj_layer"])
+        self._projection_probe.load(epoch, probe_dir, self._probe_config["proj_layer"])
 
         
     def __analyze_probes(self) -> None:
+        # Number of input sentences in this epoch
         N_inputs = len(self._encoder_probe._probe_in)
 
         for i in range(N_inputs):
-            # Get the source sentence mask and number of tokens
-            # from the encoder block's input probe
+            # Get the number of tokens in the source sentence
+            # from the encoder block's input mask probe
             src_mask=self._encoder_probe._probe_in[i]["mask"]
             N_tokens = np.count_nonzero(np.squeeze(src_mask))
 
@@ -110,11 +118,16 @@ class TransformerAnalyzer:
 
 
     def run(self) -> None:
-        if self._probe_dir.exists():
-            if self._probe_dir.is_dir() == False:
-                raise ValueError(f"Invalid probe directory name: {str(self._probe_dir)}")
+        if self._use_special_dataset == 1:
+            probe_dir = self._special_dataset_probe_dir
         else:
-            raise RuntimeError(f"Probe directory {str(self._probe_dir)} does not exist")
+            probe_dir = self._probe_dir
+
+        if probe_dir.exists():
+            if probe_dir.is_dir() == False:
+                raise ValueError(f"Invalid probe directory name: {str(probe_dir)}")
+        else:
+            raise RuntimeError(f"Probe directory {str(probe_dir)} does not exist")
 
         # Load the Tokenizer data from the files that were created during model training
         self.__load_tokenizers()

@@ -519,7 +519,7 @@ class TransformerProbe:
 
 
     def enc_embedding_hook(self, module, input, output) -> None:
-        # input[0].shape = (1 ,seq_len, d_model) => (1, 350, 512)
+        # input[0].shape = (1 ,seq_len) => (1, 350)
         # output.shape = (1, seq_len, d_model) => (1, 350, 512)
         # print("Encoder's embedding hook called")
 
