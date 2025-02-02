@@ -35,14 +35,14 @@ class MutualInfoEstimator:
         min_Y = np.amin(self._Y)
         max_Y = np.amax(self._Y)
 
-        pdf_estimator = PdfEstimator()
+        pdf_estimator = PdfEstimator("statsmodel")
         pdf_estimator.fit_data(xy_samples)
 
         x = np.linspace(min_X, max_X, num_points)
         y = np.linspace(min_Y, max_Y, num_points)
         xpos, ypos = np.meshgrid(x, y)
         xy_samples = np.vstack([xpos.ravel(), ypos.ravel()]).T
-        pdf_est = pdf_estimator.run(xy_samples)
+        pdf_est = pdf_estimator.pdf(xy_samples)
 
         # Joint and Marginal probabilities
         P_XY = pdf_est.reshape(num_points, num_points)/np.sum(pdf_est)
@@ -95,8 +95,10 @@ class MutualInfoEstimator:
     def __calculate_entropy(self, P_XY : np.ndarray, P_X : np.ndarray, P_Y : np.ndarray, continuous : bool) -> np.ndarray:
         if continuous:
             #
-            # Integration of continuous points
+            # Numerical integration of continuous points
             #
+
+            # Masked log2 operation to replace output of log2(0) with 0
             H_XY = -1 * simps(simps(P_XY * np.ma.log2(P_XY).filled(0), axis=0))
             H_X =  -1 * simps(P_X * np.ma.log2(P_X).filled(0))
             H_Y =  -1 * simps(P_Y * np.ma.log2(P_Y).filled(0))
@@ -105,7 +107,7 @@ class MutualInfoEstimator:
             # Sumation of discrete points
             #
 
-            # Masked log2 operation to replace output of log(0) with 0
+            # Masked log2 operation to replace output of log2(0) with 0
             H_XY = -np.sum(P_XY * np.ma.log2(P_XY).filled(0))
             H_X = -np.sum(P_X * np.ma.log2(P_X).filled(0))
             H_Y = -np.sum(P_Y * np.ma.log2(P_Y).filled(0))
@@ -178,5 +180,5 @@ class MutualInfoEstimator:
     
     def MINE_MI(self) -> float:
         MINE_est = MINE_estimator(self._X, self._Y)
-        MI, log = MINE_est.run()
-        return (MI * np.log2(np.exp(1))), log
+        MI, run_log = MINE_est.run()
+        return (MI * np.log2(np.exp(1))), run_log

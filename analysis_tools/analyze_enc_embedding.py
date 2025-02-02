@@ -29,13 +29,14 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
         N_valid_tokens = N_tokens
 
         # Ignore the BOS token at the beginning of the sentence
-        if (src_sentence_tokens[0] == 2):
+        if src_sentence_tokens[0] == 2:
             offset = 1
             N_valid_tokens -= 1
         else:
             offset = 0
 
-        if (src_sentence_tokens[N_tokens-1] == 3):
+        # Ignore the EOS token at the end of the sentence
+        if src_sentence_tokens[N_tokens-1] == 3:
             N_valid_tokens -= 1
         
         x = np.arange(0, N_valid_tokens, 1)
@@ -65,7 +66,7 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
         # For the encoder embedding layer analyze the last epoch
         epoch = self._N_epochs-1
 
-        # For this epoch, load all the probe files from disk
+        # For this epoch, load all the encoder embedding layer probe files from disk
         super().load_enc_embedding_probes(epoch)
 
         # Number of input sentences in this epoch
