@@ -8,19 +8,23 @@ from npeet import entropy_estimators as ee
 from MINE_estimator import MINE_estimator
 
 class MutualInfoEstimator:
-    def __init__(self, X : np.ndarray, Y : np.ndarray) -> None:
+    def __init__(self, X : np.ndarray = None, Y : np.ndarray = None) -> None:
         super().__init__()
 
         # X and Y are expected to be row vectors (1-D arrays)
-        if len(X.shape) < 2:
-            self._X = np.expand_dims(X, axis=1)
-            self._Y = np.expand_dims(Y, axis=1)
-        elif len(X.shape) == 2:
-            if X.shape[1] == 1 and Y.shape[1] == 1:
-                self._X = X
-                self._Y = Y
-            else:
-                raise ValueError("X and Y should be row vectors")
+        if (X is not None) and (Y is not None):
+            if len(X.shape) < 2:
+                self._X = np.expand_dims(X, axis=1)
+                self._Y = np.expand_dims(Y, axis=1)
+            elif len(X.shape) == 2:
+                if X.shape[1] == 1 and Y.shape[1] == 1:
+                    self._X = X
+                    self._Y = Y
+                else:
+                    raise ValueError("X and Y should be row vectors")
+        else:
+            self._X = None
+            self._Y = None
 
 
     def __estimate_pdf(self, num_points : int, continuous : bool = True) -> np.ndarray:
@@ -113,6 +117,16 @@ class MutualInfoEstimator:
         norm_MI = MI / max(H_X, H_Y)
         return norm_MI
 
+    def set_inputs(self, X : np.ndarray, Y : np.ndarray) -> None:
+        if len(X.shape) < 2:
+            self._X = np.expand_dims(X, axis=1)
+            self._Y = np.expand_dims(Y, axis=1)
+        elif len(X.shape) == 2:
+            if X.shape[1] == 1 and Y.shape[1] == 1:
+                self._X = X
+                self._Y = Y
+            else:
+                raise ValueError("X and Y should be row vectors")
 
     def kernel_MI(self, N_points : int = 100, continuous=True) -> float:
         if continuous:
@@ -148,13 +162,15 @@ class MutualInfoEstimator:
         H_X = ee.entropy(self._X)
         H_Y = ee.entropy(self._Y)
         H_XY = ee.entropy(np.hstack([self._X, self._Y]))
-        MI = H_X + H_Y - H_XY
+        MI = ee.mi(self._X, self._Y)
+        MI_entropy = H_X + H_Y - H_XY
 
         # Create a dictionary for returning the group of values
         MI_data = dict()
         MI_data["H_X"] = H_X
         MI_data["H_Y"] = H_Y
         MI_data["H_XY"] = H_XY
+        MI_data["MI_from_entropy"] = MI_entropy
         MI_data["MI"] = MI
 
         return MI_data

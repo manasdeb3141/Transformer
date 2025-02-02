@@ -38,6 +38,23 @@ special_dataset = [
             "en" : "The dog ate the food because it was hungry",
             "fr" : "Le chien a mangé la nourriture parce qu'il avait faim"
         }
+
+    },
+    {
+        "id" : 3,
+        "translation" : 
+        {
+            "en" : "The dog and the cat ate all the food",
+            "fr" : "Le chien et le chat ont mangé toute la nourriture"
+        }
+    },
+    {
+        "id" : 4,
+        "translation" : 
+        {
+            "en" : "There is a dog in the car and a cat in the boat",
+            "fr" : "Il y a un chien dans la voiture et un chat dans le bateau"
+        }
     }
 ]
     
@@ -423,7 +440,6 @@ class TransformerProbe:
 
                 if self._input_count == (max_validn_count-1):
                     batch_iterator.write('-'*80)
-                    break
 
                 self._input_count += 1
 
