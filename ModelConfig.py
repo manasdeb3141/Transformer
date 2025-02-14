@@ -25,6 +25,7 @@ class LangModelConfig(ModelConfig):
             "lr": 10**-4,
             "seq_len": 350,
             "d_model": 512,
+            "train_probe_count" : 100,
             "datasource": 'opus_books',
             "lang_src": "en",
             "lang_tgt": "fr",
@@ -34,8 +35,9 @@ class LangModelConfig(ModelConfig):
             "test_name": "model_data/opus_books_en_fr/runs",
             "dataset_dir": "model_data/opus_books_en_fr/dataset",
             "probe_dir": "model_data/opus_books_en_fr/probes",
+            "train_probe_dir" : "model_data/opus_books_en_fr/train_probes",
             "analyze_dir": "model_data/opus_books_en_fr/probes",
-            "use_special_datset" : 1
+            "use_special_dataset" : 1
         }
 
         self._probes = {

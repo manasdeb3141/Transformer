@@ -11,6 +11,9 @@ class MutualInfoEstimator:
     def __init__(self, X : np.ndarray = None, Y : np.ndarray = None) -> None:
         super().__init__()
 
+        # Default KDE estmator module
+        self._KDE_est_module = 'statsmodel'
+
         # X and Y are expected to be row vectors (1-D arrays)
         if (X is not None) and (Y is not None):
             if len(X.shape) < 2:
@@ -35,7 +38,7 @@ class MutualInfoEstimator:
         min_Y = np.amin(self._Y)
         max_Y = np.amax(self._Y)
 
-        pdf_estimator = PdfEstimator("statsmodel")
+        pdf_estimator = PdfEstimator(self._KDE_est_module)
         pdf_estimator.fit_data(xy_samples)
 
         x = np.linspace(min_X, max_X, num_points)
@@ -130,7 +133,9 @@ class MutualInfoEstimator:
             else:
                 raise ValueError("X and Y should be row vectors")
 
-    def kernel_MI(self, N_points : int = 100, continuous=True) -> float:
+    def kernel_MI(self, N_points : int = 100, KDE_module : str = 'statsmodel', continuous=True) -> float:
+        self._KDE_est_module = KDE_module
+
         if continuous:
             # Calculate the PDF based on Kernel Density Estimation
             prob_data = self.__estimate_pdf(N_points, continuous=True)
@@ -161,10 +166,12 @@ class MutualInfoEstimator:
 
 
     def kraskov_MI(self) -> float:
-        H_X = ee.entropy(self._X)
-        H_Y = ee.entropy(self._Y)
-        H_XY = ee.entropy(np.hstack([self._X, self._Y]))
-        MI = ee.mi(self._X, self._Y)
+        default_base=2
+        H_X = ee.entropy(self._X, k=3, base=default_base)
+        H_Y = ee.entropy(self._Y, k=3, base=default_base)
+        H_XY = ee.entropy(np.hstack([self._X, self._Y]), k=3, base=default_base)
+        # MI = ee.mi(self._X, self._Y, k=3, base=default_base, alpha=0.25)
+        MI = ee.mi(self._X, self._Y, k=3, base=default_base)
         MI_entropy = H_X + H_Y - H_XY
 
         # Create a dictionary for returning the group of values

@@ -7,6 +7,8 @@ import os
 from typing import Tuple
 import shutil
 import torch
+import torch.nn as nn
+from torch.optim.lr_scheduler import LambdaLR
 import torchmetrics.text
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import Dataset, DataLoader, random_split
@@ -52,8 +54,40 @@ special_dataset = [
         "id" : 4,
         "translation" : 
         {
-            "en" : "There is a dog in the car and a cat in the boat",
-            "fr" : "Il y a un chien dans la voiture et un chat dans le bateau"
+            "en" : "There is a dog in the car and a cat in the van",
+            "fr" : "Il y a un chien dans la voiture et un chat dans le van"
+        }
+    },
+    {
+        "id" : 5,
+        "translation" : 
+        {
+            "en" : "She can play the violin and the guitar",
+            "fr" : "Elle sait jouer du violon et de la guitare"
+        }
+    },
+    {
+        "id" : 6,
+        "translation" : 
+        {
+            "en" : "The table with four chairs is empty",
+            "fr" : "La table avec quatre chaises est vide"
+        }
+    },
+    {
+        "id" : 7,
+        "translation" : 
+        {
+            "en" : "The king is alive and the people are happy",
+            "fr" : "Le roi est vivant et le peuple est heureux"
+        }
+    },
+    {
+        "id" : 8,
+        "translation" : 
+        {
+            "en" : "The murderer was a woman, not a man",
+            "fr" : "Le meurtrier était une femme, pas un homme"
         }
     }
 ]
@@ -77,6 +111,7 @@ class TransformerProbe:
         self._writer = None
         self._val_dataloader = None
         self._global_step = 0
+        self._epoch_probe = True
 
         # Performance metrics
         self._cer_list = list()
@@ -108,39 +143,39 @@ class TransformerProbe:
 
     def __save_probes(self, epoch, probe_dir, probe_config) -> None:
         # Save the current epoch's encoder probes
-        self._enc_embedding_probe.save(epoch, probe_dir, probe_config["enc_embed_layer"])
+        self._enc_embedding_probe.save(epoch, probe_dir, probe_config["enc_embed_layer"], self._epoch_probe)
         self._enc_embedding_probe.clear()
-        self._enc_0_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_0_attn"])
+        self._enc_0_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_0_attn"], self._epoch_probe)
         self._enc_0_attn_probe.clear()
-        self._enc_0_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_0_feedforward"])
+        self._enc_0_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_0_feedforward"], self._epoch_probe)
         self._enc_0_feedforward_probe.clear()
-        self._enc_5_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_5_attn"])
+        self._enc_5_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_5_attn"], self._epoch_probe)
         self._enc_5_attn_probe.clear()
-        self._enc_5_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_5_feedforward"])
+        self._enc_5_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_5_feedforward"], self._epoch_probe)
         self._enc_5_feedforward_probe.clear()
-        self._encoder_probe.save(epoch, probe_dir, probe_config["enc_block"]) 
+        self._encoder_probe.save(epoch, probe_dir, probe_config["enc_block"], self._epoch_probe) 
         self._encoder_probe.clear()
 
         # Save the current epoch's decoder probes
-        self._dec_embedding_probe.save(epoch, probe_dir, probe_config["dec_embed_layer"])
+        self._dec_embedding_probe.save(epoch, probe_dir, probe_config["dec_embed_layer"], self._epoch_probe)
         self._dec_embedding_probe.clear()
-        self._dec_0_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_attn"])
+        self._dec_0_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_attn"], self._epoch_probe)
         self._dec_0_attn_probe.clear()
-        self._dec_0_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_cross_attn"])
+        self._dec_0_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_cross_attn"], self._epoch_probe)
         self._dec_0_cross_attn_probe.clear()
-        self._dec_0_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_0_feedforward"])
+        self._dec_0_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_0_feedforward"], self._epoch_probe)
         self._dec_0_feedforward_probe.clear()
-        self._dec_5_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_attn"])
+        self._dec_5_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_attn"], self._epoch_probe)
         self._dec_5_attn_probe.clear()
-        self._dec_5_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_cross_attn"])
+        self._dec_5_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_cross_attn"], self._epoch_probe)
         self._dec_5_cross_attn_probe.clear()
-        self._dec_5_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_5_feedforward"])
+        self._dec_5_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_5_feedforward"], self._epoch_probe)
         self._dec_5_feedforward_probe.clear()
-        self._decoder_probe.save(epoch, probe_dir, probe_config["dec_block"])
+        self._decoder_probe.save(epoch, probe_dir, probe_config["dec_block"], self._epoch_probe)
         self._decoder_probe.clear()
 
         # Save the current epoch's projection layer probe
-        self._projection_probe.save(epoch, probe_dir, probe_config["proj_layer"])
+        self._projection_probe.save(epoch, probe_dir, probe_config["proj_layer"], self._epoch_probe)
         self._projection_probe.clear()
 
     def __hook_modules(self) -> None:
@@ -213,7 +248,137 @@ class TransformerProbe:
 
         return None 
 
+    # Only train for one epoch and dump the probes after every batch
+    def train_probe(self, model : Transformer, config : dict, probe_config: dict, ds_dict : dict) -> None:
+        # Indicate that the probes are batch probes
+        self._epoch_probe = False
+
+        # Save the dataloader and tokenizer of the source and target datasets 
+        # so that they can be used by other methods of the ModelTrainer class
+        self._train_dataloader = ds_dict['train_dataloader']
+        self._val_dataloader = ds_dict['val_dataloader']
+        self._tokenizer_src = ds_dict['src_tokenizer']
+        self._tokenizer_tgt = ds_dict['tgt_tokenizer']
+
+        # Get the model configuration parameters
+        lr = config['lr']
+        self._seq_len = config['seq_len']
+        self._d_model = config["d_model"]
+        lang_src = config["lang_src"]
+        lang_tgt = config["lang_tgt"]
+        probe_folder = config["train_probe_dir"]
+        use_special_dataset = config["use_special_dataset"] 
+        train_probe_count = config["train_probe_count"] 
+
+        # If the probe dir exists clean the directory by removing all
+        # subdirectories
+        probe_dir = Path(probe_folder)
+        if probe_dir.exists():
+            if probe_dir.is_dir() == False:
+                raise ValueError(f"Invalid probe directory name: {str(probe_dir)}")
+
+            # Delete all the existing sub-directories in the probe directory
+            for subdir_path in probe_dir.iterdir():
+                if subdir_path.is_dir():
+                    shutil.rmtree(subdir_path)
+        else:
+            # Create the directory for storing the model probes
+            probe_dir.mkdir(parents=True)        
+        
+        # Save the model to a member variable so that it can be
+        # accessed by other methods of this class
+        self._model = model
+        
+        # Tensorboard writer
+        log_dir = probe_dir / "runs"
+        self._writer = SummaryWriter(log_dir)
+
+        if use_special_dataset == 1:
+            # Specially crafted dataset
+            val_ds = BilingualDataset(special_dataset, self._tokenizer_src, self._tokenizer_src, lang_src, lang_tgt, self._seq_len)
+            self._val_dataloader = DataLoader(val_ds, batch_size=1, shuffle=False)
+
+        # Instantiate the probe classes which will in turn initialize the 
+        # memory for storing the probes
+        N_inputs = min(self.MAX_PROBE_INPUT_DATA, len(self._val_dataloader))
+        # N_inputs = len(self._val_dataloader)
+        self.__create_probes(N_inputs)
+
+        # Model optimizer
+        self._optimizer = torch.optim.Adam(self._model.parameters(), lr=lr, eps=1e-9)
+
+        # Loss function used for the training
+        loss_fn = nn.CrossEntropyLoss(ignore_index=self._tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1).to(self._device)
+
+        # Calculate the cadence for the dumping of the probes and
+        # initialize a counter for the probe cadence
+        probe_cadence = len(self._train_dataloader) // train_probe_count
+        batch_counter = 1
+        batch_probe_counter = 0
+
+        self._batch_iterator = tqdm(self._train_dataloader, desc=f"Processing Epoch 0:")
+        self._model.train()
+
+        # Train for one epoch over several batches
+        for batch in self._batch_iterator:
+            encoder_input = batch['encoder_input'].to(self._device) # (batch_len, seq_len)
+            decoder_input = batch['decoder_input'].to(self._device) # (batch_len, seq_len)
+            encoder_mask = batch['encoder_mask'].to(self._device) # (batch_len, 1, 1, seq_len)
+            decoder_mask = batch['decoder_mask'].to(self._device) # (batch_len, 1, seq_len, seq_len)
+
+            # Run the tensors through the encoder, decoder and the projection layer
+            encoder_output = self._model.encode(encoder_input, encoder_mask) # (batch_len, seq_len, d_model)
+            decoder_output = self._model.decode(encoder_output, encoder_mask, decoder_input, decoder_mask) # (batch_len, seq_len, d_model)
+            proj_output = self._model.project(decoder_output) # (batch_len, seq_len, vocab_size)
+    
+            # Compare the output with the label
+            label = batch['label'].to(self._device) # (batch_len, seq_len)
+
+            # Compute the cross-entropy loss
+            loss = loss_fn(proj_output.view(-1, self._tokenizer_tgt.get_vocab_size()), label.view(-1))
+            self._batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
+
+            # Log the loss
+            self._writer.add_scalar('train loss', loss.item(), batch_probe_counter)
+            self._writer.flush()
+
+            # Backpropagate the loss
+            loss.backward()
+
+            # Update the weights
+            self._optimizer.step()
+            self._optimizer.zero_grad(set_to_none=True)
+
+            if batch_counter == probe_cadence:
+                # Hook the layers of the model
+                self.__hook_modules()
+
+                # Run the validation step to collect the probes
+                self.__validate(0)
+
+                # Save the probes collected during the validation step
+                self.__save_probes(batch_probe_counter, probe_dir, probe_config)
+
+                # Unhook all the modules to continue training with the next batch
+                self.__unhook_modules()
+
+                # Reset the batch counter
+                batch_counter = 1
+
+                # Empty the GPU cache after validation and go back to training
+                # the model
+                torch.cuda.empty_cache()
+                self._model.train()
+            else:
+                batch_counter += 1
+
+        self._writer.close()
+
+
     def run(self, model : Transformer, config : dict, probe_config : dict) -> None:
+        # Indicate that the probes are epoch probes
+        self._epoch_probe = True
+
         # Get the model configuration values
         key = "model_dir"
         if key in config:
@@ -229,13 +394,6 @@ class TransformerProbe:
             RuntimeError("TransformerProbe.run(): Model config dictionary does not contain probe_dir")
             return
 
-        key = "dataset_dir"
-        if key in config:
-            dataset_folder = config[key]
-        else:
-            RuntimeError("TransformerProbe.run(): Model config dictionary does not contain dataset_dir")
-            return
-        
         lang_src = config["lang_src"]
         lang_tgt = config["lang_tgt"]
         self._seq_len = config["seq_len"]

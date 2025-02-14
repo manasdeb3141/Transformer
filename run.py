@@ -81,7 +81,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", help="Train the Transformer model", action="store_true")
     parser.add_argument("--trans", help="Run the Tranformer model as a language translator", action="store_true")
-    parser.add_argument("--probe", help="Probe the layers of each epoc of the Tranformer model with the validation data", action="store_true")
+    parser.add_argument("--probe", help="Probe the layers of each epoch of the Tranformer model with the validation data", action="store_true")
+    parser.add_argument("--train_probe", help="Only run one epoch of training and dump the probe data after every batch of training", action="store_true")
     parser.add_argument("--analyze", help="Analyze the Transformer model probes", action="store_true")
 
     # Parse the argument
@@ -95,7 +96,7 @@ def main():
     cfg_obj = LangModelConfig()
     model_config = cfg_obj.get_config()
 
-    if args.train:   
+    if args.train or args.train_probe:   
         #
         # Train the Transformer model
         #
@@ -135,9 +136,17 @@ def main():
 
         display_model_stats(transf_model)
 
-        # Train the transformer model as a language translator
-        transf_trainer = ModelTrainer(device, transf_model.to(device))
-        transf_trainer.train(model_config, ds_dict)
+        if args.train:
+            # Train the transformer model as a language translator
+            transf_trainer = ModelTrainer(device, transf_model.to(device))
+            transf_trainer.train(model_config, ds_dict)
+        else:
+            # Dictionary of probe file names
+            model_probes = cfg_obj.get_probes()
+
+            # Only run one epoch of training and dump the probe data after every batch of training
+            transf_probe = TransformerProbe(device)
+            transf_probe.train_probe(transf_model.to(device), model_config, model_probes, ds_dict)
     elif args.trans:
         #
         # Run the Transformer model as a translator

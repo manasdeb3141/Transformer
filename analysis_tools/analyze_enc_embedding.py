@@ -63,58 +63,60 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
     def __process_probes(self):
         print("Analyzing the Embedding Layer")
 
-        # For the encoder embedding layer analyze the last epoch
-        epoch = self._N_epochs-1
+        epochs_to_analyze = [0, 4, 9, 14, 19]
 
-        # For this epoch, load all the encoder embedding layer probe files from disk
-        super().load_enc_embedding_probes(epoch)
+        # Analyze the probes of each epoch of the encoder embedding layer
+        for epoch in epochs_to_analyze:
+            # For this epoch, load all the encoder embedding layer probe files from disk
+            super().load_enc_embedding_probes(epoch)
 
-        # Number of input sentences in this epoch
-        N_inputs = len(self._encoder_probe._probe_in)
+            # Number of input sentences in this epoch
+            N_inputs = len(self._encoder_probe._probe_in)
 
-        # Initialize the list of mutual information values for the encoder embedding layer 
-        self.__enc_embedding_MI = list()
+            # Initialize the list of mutual information values for the encoder embedding layer 
+            self.__enc_embedding_MI = list()
 
-        # Iterate across all the input sentences of this epoch
-        for i in range(N_inputs):
-            # Get the number of tokens in this source sentence
-            # from the encoder block's input mask probe
-            src_mask=self._encoder_probe._probe_in[i]["mask"]
-            N_tokens = np.count_nonzero(np.squeeze(src_mask))
+            # Iterate across all the input sentences of this epoch
+            for i in range(N_inputs):
+                # Get the number of tokens in this source sentence
+                # from the encoder block's input mask probe
+                src_mask=self._encoder_probe._probe_in[i]["mask"]
+                N_tokens = np.count_nonzero(np.squeeze(src_mask))
 
-            # Get the encoder's embedding layer input and output probes
-            enc_embedding_input = self._enc_embedding_probe._probe_in[i]
-            enc_embedding_output = self._enc_embedding_probe._probe_out[i]
+                # Get the encoder's embedding layer input and output probes
+                enc_embedding_input = self._enc_embedding_probe._probe_in[i]
+                enc_embedding_output = self._enc_embedding_probe._probe_out[i]
 
-            # From the encoder's embedding layer input probe get the source and target tokens
-            src_tokens = enc_embedding_input["src_tokens"]
-            src_sentence_tokens = np.squeeze(src_tokens)[:N_tokens]
-            # print(f"Source sentence: {self._tokenizer_src.decode(src_sentence_tokens)}")
+                # From the encoder's embedding layer input probe get the source and target tokens
+                src_tokens = enc_embedding_input["src_tokens"]
+                src_sentence_tokens = np.squeeze(src_tokens)[:N_tokens]
+                # print(f"Source sentence: {self._tokenizer_src.decode(src_sentence_tokens)}")
 
-            tgt_mask=enc_embedding_input["tgt_mask"]
-            N_words = np.count_nonzero(np.squeeze(tgt_mask))
-            tgt_tokens = enc_embedding_input["tgt_tokens"]
-            tgt_sentence_tokens = np.squeeze(tgt_tokens)[:N_words]
-            # print(f"Target sentence: {self._tokenizer_tgt.decode(tgt_sentence_tokens)}")
+                tgt_mask=enc_embedding_input["tgt_mask"]
+                N_words = np.count_nonzero(np.squeeze(tgt_mask))
+                tgt_tokens = enc_embedding_input["tgt_tokens"]
+                tgt_sentence_tokens = np.squeeze(tgt_tokens)[:N_words]
+                # print(f"Target sentence: {self._tokenizer_tgt.decode(tgt_sentence_tokens)}")
 
-            self.__analyze_enc_embedding(i, np.squeeze(enc_embedding_output), N_tokens, src_sentence_tokens)
+                self.__analyze_enc_embedding(i, np.squeeze(enc_embedding_output), N_tokens, src_sentence_tokens)
 
-        # Plot the MI values for the encoder embedding layer        
-        fig, axs = plt.subplots(2, 2)
-        fig.suptitle("Mutual Information of the Encoder embedding layer output vectors")
-        for i in range(4):
-            a = i//2
-            b = i%2
-            im = axs[a, b].imshow(self.__enc_embedding_MI[i]["MI"], cmap=plt.cm.Wistia)
-            axs[a, b].set_xticks(range(0, len(self.__enc_embedding_MI[i]["input_words"])), self.__enc_embedding_MI[i]["input_words"], rotation=45)
-            axs[a, b].set_yticks(range(0, len(self.__enc_embedding_MI[i]["input_words"])), self.__enc_embedding_MI[i]["input_words"], rotation=45)
-            axs[a, b].set_title(f"Mutual information: sentence {i}")
+            # Plot the MI values for the encoder embedding layer        
+            fig, axs = plt.subplots(2, 4)
+            fig.suptitle(f"Mutual information of the encoder embedding layer output for epoch {epoch}")
+            for i in range(8):
+                a = i//4
+                b = i%4
+                im = axs[a, b].imshow(self.__enc_embedding_MI[i]["MI"], cmap=plt.cm.Wistia)
+                # im = axs[a, b].imshow(self.__enc_embedding_MI[i]["MI"], cmap=plt.cm.Set1)
+                axs[a, b].set_xticks(range(0, len(self.__enc_embedding_MI[i]["input_words"])), self.__enc_embedding_MI[i]["input_words"], rotation=45)
+                axs[a, b].set_yticks(range(0, len(self.__enc_embedding_MI[i]["input_words"])), self.__enc_embedding_MI[i]["input_words"], rotation=45)
+                axs[a, b].set_title(f"Mutual information: sentence {i}")
 
-        plt.subplots_adjust(hspace=0.8, right=0.8)
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
-        fig.colorbar(im, cax=cbar_ax)
+            plt.subplots_adjust(hspace=0.8, right=0.8)
+            cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+            fig.colorbar(im, cax=cbar_ax)
 
-        plt.show()
+            plt.show()
 
 
 def main():
@@ -123,7 +125,7 @@ def main():
     model_config = cfg_obj.get_config()
 
     model_config["tokenizer_dir"] = "../model_data/opus_books_en_fr/tokens"
-    model_config["analyze_dir"] = "../model_data/opus_books_en_fr/probes_4"
+    model_config["analyze_dir"] = "../model_data/opus_books_en_fr/probes_8"
 
     # Dictionary of probe file names
     probe_config = cfg_obj.get_probes()

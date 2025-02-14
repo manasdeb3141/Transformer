@@ -39,13 +39,17 @@ class ProbeManager:
         in_list.append(input_val)
         out_list.append(output_val)
 
-    def save(self, epoch, probe_dir, probe_name) -> None:
+    def save(self, epoch_or_batch, probe_dir, probe_name, save_epoch=True) -> None:
         # Create the probe directory for the current epoch
-        epoch_probe_dir = probe_dir / f"epoch_{epoch:02d}"
-        if epoch_probe_dir.exists() == False:
-            epoch_probe_dir.mkdir(parents=True)
+        if save_epoch:
+            epoch_batch_probe_dir = probe_dir / f"epoch_{epoch_or_batch:02d}"
+        else:
+            epoch_batch_probe_dir = probe_dir / f"batch_{epoch_or_batch:02d}"
 
-        probe_fname = epoch_probe_dir / f"{probe_name}.pt"
+        if epoch_batch_probe_dir.exists() == False:
+            epoch_batch_probe_dir.mkdir(parents=True)
+
+        probe_fname = epoch_batch_probe_dir / f"{probe_name}.pt"
         probe_dict = {'input' : self._probe_in, 'output' : self._probe_out, 'list_of_lists' : self._list_of_lists}
         torch.save(probe_dict, probe_fname)
 
@@ -70,9 +74,13 @@ class ProbeManager:
                 self._probe_out.append(None) 
 
 
-    def load(self, epoch, probe_dir, probe_name) -> None:
-        epoch_probe_dir = probe_dir / f"epoch_{epoch:02d}"
-        probe_fname = epoch_probe_dir / f"{probe_name}.pt"
+    def load(self, epoch_or_batch, probe_dir, probe_name, load_epoch=True) -> None:
+        if load_epoch:
+            epoch_batch_probe_dir = probe_dir / f"epoch_{epoch_or_batch:02d}"
+        else:
+            epoch_batch_probe_dir = probe_dir / f"batch_{epoch_or_batch:02d}"
+
+        probe_fname = epoch_batch_probe_dir / f"{probe_name}.pt"
         if probe_fname.exists() == True:
             probe_dict = torch.load(probe_fname)
             self._probe_in = probe_dict["input"]

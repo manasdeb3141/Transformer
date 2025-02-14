@@ -80,50 +80,50 @@ class TransformerAnalyzer:
         return self._src_vocab_keys[self._src_vocab_values.index(token_id)]
 
 
-    def load_enc_embedding_probes(self, epoch) -> None:
-        self._enc_embedding_probe.load(epoch, self._probe_dir, self._probe_config["enc_embed_layer"])
-        self._encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"]) 
+    def load_enc_embedding_probes(self, epoch, load_epoch=True) -> None:
+        self._enc_embedding_probe.load(epoch, self._probe_dir, self._probe_config["enc_embed_layer"], load_epoch)
+        self._encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"], load_epoch) 
 
     
-    def load_encoder_probes(self, epoch) -> None:
-        self._enc_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_attn"])
-        self._enc_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_feedforward"])
-        self._enc_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_attn"])
-        self._enc_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_feedforward"])
-        self._encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"])
+    def load_encoder_probes(self, epoch, load_epoch=True) -> None:
+        self._enc_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_attn"], load_epoch)
+        self._enc_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_feedforward"], load_epoch)
+        self._enc_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_attn"], load_epoch)
+        self._enc_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_feedforward"], load_epoch)
+        self._encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"], load_epoch)
 
 
-    def load_decoder_probes(self, epoch) -> None:
-        self._dec_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_attn"])
-        self._dec_0_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_cross_attn"])
-        self._dec_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_feedforward"])
-        self._dec_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_attn"])
-        self._dec_5_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_cross_attn"])
-        self._dec_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_feedforward"])
-        self._decoder_probe.load(epoch, self._probe_dir, self._probe_config["dec_block"])
+    def load_decoder_probes(self, epoch, load_epoch=True) -> None:
+        self._dec_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_attn"], load_epoch)
+        self._dec_0_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_cross_attn"], load_epoch)
+        self._dec_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_feedforward"], load_epoch)
+        self._dec_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_attn"], load_epoch)
+        self._dec_5_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_cross_attn"], load_epoch)
+        self._dec_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_feedforward"], load_epoch)
+        self._decoder_probe.load(epoch, self._probe_dir, self._probe_config["dec_block"], load_epoch)
 
 
-    def load_probes(self, epoch) -> None:
+    def load_probes(self, epoch, load_epoch=True) -> None:
         # Load the epoch's encoder probes
-        self._enc_embedding_probe.load(epoch, self._probe_dir, self._probe_config["enc_embed_layer"])
-        self._enc_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_attn"])
-        self._enc_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_feedforward"])
-        self._enc_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_attn"])
-        self._enc_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_feedforward"])
-        self._encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"]) 
+        self._enc_embedding_probe.load(epoch, self._probe_dir, self._probe_config["enc_embed_layer"], load_epoch)
+        self._enc_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_attn"], load_epoch)
+        self._enc_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_0_feedforward"], load_epoch)
+        self._enc_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_attn"], load_epoch)
+        self._enc_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_feedforward"], load_epoch)
+        self._encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"], load_epoch) 
 
         # Load the epoch's decoder probes
-        self._dec_embedding_probe.load(epoch, self._probe_dir, self._probe_config["dec_embed_layer"])
-        self._dec_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_attn"])
-        self._dec_0_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_cross_attn"])
-        self._dec_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_feedforward"])
-        self._dec_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_attn"])
-        self._dec_5_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_cross_attn"])
-        self._dec_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_feedforward"])
-        self._decoder_probe.load(epoch, self._probe_dir, self._probe_config["dec_block"])
+        self._dec_embedding_probe.load(epoch, self._probe_dir, self._probe_config["dec_embed_layer"], load_epoch)
+        self._dec_0_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_attn"], load_epoch)
+        self._dec_0_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_cross_attn"], load_epoch)
+        self._dec_0_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_0_feedforward"], load_epoch)
+        self._dec_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_attn"], load_epoch)
+        self._dec_5_cross_attn_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_cross_attn"], load_epoch)
+        self._dec_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["dec_layer_5_feedforward"], load_epoch)
+        self._decoder_probe.load(epoch, self._probe_dir, self._probe_config["dec_block"], load_epoch)
 
         # Load the epoch's projection layer probe
-        self._projection_probe.load(epoch, self._probe_dir, self._probe_config["proj_layer"])
+        self._projection_probe.load(epoch, self._probe_dir, self._probe_config["proj_layer"], load_epoch)
 
 
     def run(self) -> None:
