@@ -394,6 +394,12 @@ class TransformerProbe:
             RuntimeError("TransformerProbe.run(): Model config dictionary does not contain probe_dir")
             return
 
+        key = "dataset_folder"
+        if key in config:
+            dataset_folder = config[key]
+        else:
+            dataset_folder = None
+
         lang_src = config["lang_src"]
         lang_tgt = config["lang_tgt"]
         self._seq_len = config["seq_len"]
@@ -420,14 +426,25 @@ class TransformerProbe:
             # Specially crafted dataset
             val_ds = BilingualDataset(special_dataset, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
         else:
-            # Use the Huggingface dataset
-            ds_raw = load_dataset(datasource, f"{lang_src}-{lang_tgt}", split='train')
+            if dataset_folder:
+                dataset_dir = Path(dataset_folder)
+                if dataset_dir.exists() == False:
+                    raise ValueError(f"Dataset directory {str(dataset_dir)} does not exist")
 
-            # Split the dataset as training and validation. We will only use the validation dataset
-            ds_raw_len = len(ds_raw)
-            train_ds_size = ds_raw_len - self.MAX_PROBE_INPUT_DATA
-            val_ds_size = self.MAX_PROBE_INPUT_DATA
-            train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
+                dataset_fname = dataset_dir / "validataion_dataset.pt"
+                if dataset_fname.exists():
+                    valid_ds_raw = torch.load(dataset_fname)
+                else:
+                    raise ValueError(f"Dataset file {str(dataset_fname)} does not exist")
+            else:
+                # Use the Huggingface dataset
+                ds_raw = load_dataset(datasource, f"{lang_src}-{lang_tgt}", split='train')
+
+                # Split the dataset as training and validation. We will only use the validation dataset
+                ds_raw_len = len(ds_raw)
+                train_ds_size = ds_raw_len - self.MAX_PROBE_INPUT_DATA
+                val_ds_size = self.MAX_PROBE_INPUT_DATA
+                train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
 
             val_ds = BilingualDataset(val_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
 

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pdf_estimator import PdfEstimator
-from scipy.integrate import simps
+from scipy.integrate import simpson
 
 from npeet import entropy_estimators as ee
 from MINE_estimator import MINE_estimator
@@ -52,8 +52,8 @@ class MutualInfoEstimator:
 
         if continuous:
             # Integration of continuous points using Simpson's rule
-            P_X = simps(P_XY, None, axis=0)
-            P_Y = simps(P_XY, None, axis=1)
+            P_X = simpson(P_XY, None, axis=0)
+            P_Y = simpson(P_XY, None, axis=1)
         else:
             # Summation of discrete points
             P_X = np.sum(P_XY, axis=0)
@@ -102,9 +102,9 @@ class MutualInfoEstimator:
             #
 
             # Masked log2 operation to replace output of log2(0) with 0
-            H_XY = -1 * simps(simps(P_XY * np.ma.log2(P_XY).filled(0), axis=0))
-            H_X =  -1 * simps(P_X * np.ma.log2(P_X).filled(0))
-            H_Y =  -1 * simps(P_Y * np.ma.log2(P_Y).filled(0))
+            H_XY = -1 * simpson(simpson(P_XY * np.ma.log2(P_XY).filled(0), axis=0))
+            H_X =  -1 * simpson(P_X * np.ma.log2(P_X).filled(0))
+            H_Y =  -1 * simpson(P_Y * np.ma.log2(P_Y).filled(0))
         else:
             #
             # Sumation of discrete points

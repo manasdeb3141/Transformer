@@ -268,7 +268,7 @@ class ModelTrainer:
             torch.save(model_save_dict, model_filename)
 
             # If this is the first training epoch then save the validation dataset
-            dataset_filename = dataset_dir / "validation_data.pt"
+            dataset_filename = dataset_dir / "validation_dataset.pt"
             if epoch == 0:
                 torch.save(val_dataset, dataset_filename)
 

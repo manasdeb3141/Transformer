@@ -29,7 +29,7 @@ class LangModelConfig(ModelConfig):
             "datasource": 'opus_books',
             "lang_src": "en",
             "lang_tgt": "fr",
-            "preload": "latest",
+            "preload": None,
             "tokenizer_dir" : "model_data/opus_books_en_fr/tokens",
             "model_dir"     : "model_data/opus_books_en_fr/weights",
             "test_name": "model_data/opus_books_en_fr/runs",

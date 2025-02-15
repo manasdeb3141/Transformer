@@ -17,8 +17,8 @@ class Transformer(nn.Module):
                  source_sequence_len: int,
                  target_sequence_len: int,
                  d_model: int = 512,
-                 N: int = 6,
-                 h: int = 8,
+                 N_layers: int = 6,
+                 N_heads: int = 8,
                  dropout: float = 0.1,
                  d_ff: int = 2048) -> None:
         super().__init__()
@@ -33,20 +33,20 @@ class Transformer(nn.Module):
 
         # Create the Encoder sub-blocks
         encoder_sublayers = []
-        for _ in range(N):
-            encoder_self_attention_block = MultiheadAttention(d_model, h, dropout)
+        for _ in range(N_layers):
+            encoder_self_attention_block = MultiheadAttention(d_model, N_heads, dropout)
             feed_forward_block = FeedForward(d_model, d_ff, dropout)
-            encoder_block = EncoderSublayer(encoder_self_attention_block, feed_forward_block, dropout)
-            encoder_sublayers.append(encoder_block)
+            encoder_sub_block = EncoderSublayer(encoder_self_attention_block, feed_forward_block, dropout)
+            encoder_sublayers.append(encoder_sub_block)
 
         # Create the Decoder sub-blocks
         decoder_sublayers = []
-        for _ in range(N):
-            decoder_self_attention_block = MultiheadAttention(d_model, h, dropout)
-            decoder_cross_attention_block = MultiheadAttention(d_model, h, dropout)
+        for _ in range(N_layers):
+            decoder_self_attention_block = MultiheadAttention(d_model, N_heads, dropout)
+            decoder_cross_attention_block = MultiheadAttention(d_model, N_heads, dropout)
             feed_forward_block = FeedForward(d_model, d_ff, dropout)
-            decoder_block = DecoderSublayer(decoder_self_attention_block, decoder_cross_attention_block, feed_forward_block, dropout)
-            decoder_sublayers.append(decoder_block)
+            decoder_sub_block = DecoderSublayer(decoder_self_attention_block, decoder_cross_attention_block, feed_forward_block, dropout)
+            decoder_sublayers.append(decoder_sub_block)
 
         # Create the Encoder and Decoder
         self._encoder = Encoder(nn.ModuleList(encoder_sublayers))
