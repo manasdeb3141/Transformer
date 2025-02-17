@@ -155,6 +155,10 @@ class MutualInfoEstimator:
         # Mutual Information
         MI = H_X + H_Y - H_XY
 
+        # Saturate the mutual information to zero if it is negative
+        if MI < 0:
+            MI = 0
+
         # Create a dictionary for returning the group of values
         MI_data = dict()
         MI_data["H_X"] = H_X
@@ -163,6 +167,17 @@ class MutualInfoEstimator:
         MI_data["MI"] = MI
 
         return prob_data, MI_data
+
+    def kraskov_entropy(self, X=None) -> float:
+        if X is None:
+            X = self._X
+
+        default_base=2
+        H = ee.entropy(X, k=3, base=default_base)
+        if H < 0:
+            H = 0
+
+        return H
 
 
     def kraskov_MI(self) -> float:
@@ -173,6 +188,10 @@ class MutualInfoEstimator:
         # MI = ee.mi(self._X, self._Y, k=3, base=default_base, alpha=0.25)
         MI = ee.mi(self._X, self._Y, k=3, base=default_base)
         MI_entropy = H_X + H_Y - H_XY
+
+        # Saturate the mutual information to zero if it is negative
+        if MI < 0:
+            MI = 0
 
         # Create a dictionary for returning the group of values
         MI_data = dict()
@@ -188,4 +207,9 @@ class MutualInfoEstimator:
     def MINE_MI(self) -> float:
         MINE_est = MINE_estimator(self._X, self._Y)
         MI, run_log = MINE_est.run()
+
+        # Saturate the mutual information to zero if it is negative
+        if MI < 0:
+            MI = 0
+
         return (MI * np.log2(np.exp(1))), run_log

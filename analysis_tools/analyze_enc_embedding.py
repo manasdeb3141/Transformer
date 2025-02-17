@@ -58,7 +58,7 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
             MI[x, y] = MI_data["MI"]
 
         MI_dict = dict(input_words=input_words, x_pos=x_pos, y_pos=y_pos, MI=MI)
-        self.__enc_embedding_MI.append(MI_dict)
+        return MI_dict
         
     def __process_probes(self):
         print("Analyzing the Embedding Layer")
@@ -74,7 +74,7 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
             N_inputs = len(self._encoder_probe._probe_in)
 
             # Initialize the list of mutual information values for the encoder embedding layer 
-            self.__enc_embedding_MI = list()
+            enc_embedding_MI = list()
 
             # Iterate across all the input sentences of this epoch
             for i in range(N_inputs):
@@ -98,7 +98,8 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
                 tgt_sentence_tokens = np.squeeze(tgt_tokens)[:N_words]
                 # print(f"Target sentence: {self._tokenizer_tgt.decode(tgt_sentence_tokens)}")
 
-                self.__analyze_enc_embedding(i, np.squeeze(enc_embedding_output), N_tokens, src_sentence_tokens)
+                MI_dict = self.__analyze_enc_embedding(i, np.squeeze(enc_embedding_output), N_tokens, src_sentence_tokens)
+                enc_embedding_MI.append(MI_dict)
 
             # Plot the MI values for the encoder embedding layer        
             fig, axs = plt.subplots(2, 4)
@@ -106,10 +107,10 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
             for i in range(8):
                 a = i//4
                 b = i%4
-                im = axs[a, b].imshow(self.__enc_embedding_MI[i]["MI"], cmap=plt.cm.Wistia)
+                im = axs[a, b].imshow(enc_embedding_MI[i]["MI"], cmap=plt.cm.Wistia)
                 # im = axs[a, b].imshow(self.__enc_embedding_MI[i]["MI"], cmap=plt.cm.Set1)
-                axs[a, b].set_xticks(range(0, len(self.__enc_embedding_MI[i]["input_words"])), self.__enc_embedding_MI[i]["input_words"], rotation=45)
-                axs[a, b].set_yticks(range(0, len(self.__enc_embedding_MI[i]["input_words"])), self.__enc_embedding_MI[i]["input_words"], rotation=45)
+                axs[a, b].set_xticks(range(0, len(enc_embedding_MI[i]["input_words"])), enc_embedding_MI[i]["input_words"], rotation=45)
+                axs[a, b].set_yticks(range(0, len(enc_embedding_MI[i]["input_words"])), enc_embedding_MI[i]["input_words"], rotation=45)
                 axs[a, b].set_title(f"Mutual information: sentence {i}")
 
             plt.subplots_adjust(hspace=0.8, right=0.8)

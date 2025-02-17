@@ -82,7 +82,7 @@ class ProbeManager:
 
         probe_fname = epoch_batch_probe_dir / f"{probe_name}.pt"
         if probe_fname.exists() == True:
-            probe_dict = torch.load(probe_fname)
+            probe_dict = torch.load(probe_fname, weights_only=False)
             self._probe_in = probe_dict["input"]
             self._probe_out = probe_dict["output"]
             self._list_of_lists = probe_dict["list_of_lists"]

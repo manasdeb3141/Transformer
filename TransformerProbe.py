@@ -121,20 +121,54 @@ class TransformerProbe:
     def __create_probes(self, N_inputs) -> None:
         # Encoder probe objects
         self._enc_embedding_probe = ProbeManager(N_inputs)          # Encoder's embedding layer probe
+
         self._enc_0_attn_probe = ProbeManager(N_inputs)             # Encoder 0 attention layer probe
         self._enc_0_feedforward_probe = ProbeManager(N_inputs)      # Encoder 0 feedforward layer probe
+
+        self._enc_1_attn_probe = ProbeManager(N_inputs)             # Encoder 1 attention layer probe
+        self._enc_1_feedforward_probe = ProbeManager(N_inputs)      # Encoder 1 feedforward layer probe
+
+        self._enc_2_attn_probe = ProbeManager(N_inputs)             # Encoder 2 attention layer probe
+        self._enc_2_feedforward_probe = ProbeManager(N_inputs)      # Encoder 2 feedforward layer probe
+
+        self._enc_3_attn_probe = ProbeManager(N_inputs)             # Encoder 3 attention layer probe
+        self._enc_3_feedforward_probe = ProbeManager(N_inputs)      # Encoder 3 feedforward layer probe
+
+        self._enc_4_attn_probe = ProbeManager(N_inputs)             # Encoder 4 attention layer probe
+        self._enc_4_feedforward_probe = ProbeManager(N_inputs)      # Encoder 4 feedforward layer probe
+
         self._enc_5_attn_probe = ProbeManager(N_inputs)             # Encoder 5 attention layer probe
         self._enc_5_feedforward_probe = ProbeManager(N_inputs)      # Encoder 5 feedforward layer probe
+
         self._encoder_probe = ProbeManager(N_inputs)                # Encoder block's input and output probe
 
         # Decoder probe objects
         self._dec_embedding_probe = ProbeManager(N_inputs)          # Decoder's embedding layer probe
+
         self._dec_0_attn_probe = ProbeManager(N_inputs)             # Decoder 0 attention layer probe
         self._dec_0_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 0 cross-attention layer probe
         self._dec_0_feedforward_probe = ProbeManager(N_inputs)      # Decoder 0 feedforward layer probe
+
+        self._dec_1_attn_probe = ProbeManager(N_inputs)             # Decoder 1 attention layer probe
+        self._dec_1_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 1 cross-attention layer probe
+        self._dec_1_feedforward_probe = ProbeManager(N_inputs)      # Decoder 1 feedforward layer probe
+
+        self._dec_2_attn_probe = ProbeManager(N_inputs)             # Decoder 2 attention layer probe
+        self._dec_2_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 2 cross-attention layer probe
+        self._dec_2_feedforward_probe = ProbeManager(N_inputs)      # Decoder 2 feedforward layer probe
+
+        self._dec_3_attn_probe = ProbeManager(N_inputs)             # Decoder 3 attention layer probe
+        self._dec_3_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 3 cross-attention layer probe
+        self._dec_3_feedforward_probe = ProbeManager(N_inputs)      # Decoder 3 feedforward layer probe
+
+        self._dec_4_attn_probe = ProbeManager(N_inputs)             # Decoder 4 attention layer probe
+        self._dec_4_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 4 cross-attention layer probe
+        self._dec_4_feedforward_probe = ProbeManager(N_inputs)      # Decoder 4 feedforward layer probe
+
         self._dec_5_attn_probe = ProbeManager(N_inputs)             # Decoder 5 attention layer probe
         self._dec_5_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 5 cross-attention layer probe
         self._dec_5_feedforward_probe = ProbeManager(N_inputs)      # Decoder 5 feedforward layer probe
+
         self._decoder_probe = ProbeManager(N_inputs)                # Decoder block's input and output probe
 
         # Projection layer probe object 
@@ -145,32 +179,86 @@ class TransformerProbe:
         # Save the current epoch's encoder probes
         self._enc_embedding_probe.save(epoch, probe_dir, probe_config["enc_embed_layer"], self._epoch_probe)
         self._enc_embedding_probe.clear()
+
         self._enc_0_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_0_attn"], self._epoch_probe)
         self._enc_0_attn_probe.clear()
         self._enc_0_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_0_feedforward"], self._epoch_probe)
         self._enc_0_feedforward_probe.clear()
+
+        self._enc_1_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_1_attn"], self._epoch_probe)
+        self._enc_1_attn_probe.clear()
+        self._enc_1_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_1_feedforward"], self._epoch_probe)
+        self._enc_1_feedforward_probe.clear()
+
+        self._enc_2_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_2_attn"], self._epoch_probe)
+        self._enc_2_attn_probe.clear()
+        self._enc_2_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_2_feedforward"], self._epoch_probe)
+        self._enc_2_feedforward_probe.clear()
+
+        self._enc_3_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_3_attn"], self._epoch_probe)
+        self._enc_3_attn_probe.clear()
+        self._enc_3_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_3_feedforward"], self._epoch_probe)
+        self._enc_3_feedforward_probe.clear()
+
+        self._enc_4_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_4_attn"], self._epoch_probe)
+        self._enc_4_attn_probe.clear()
+        self._enc_4_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_4_feedforward"], self._epoch_probe)
+        self._enc_4_feedforward_probe.clear()
+
         self._enc_5_attn_probe.save(epoch, probe_dir, probe_config["enc_layer_5_attn"], self._epoch_probe)
         self._enc_5_attn_probe.clear()
         self._enc_5_feedforward_probe.save(epoch, probe_dir, probe_config["enc_layer_5_feedforward"], self._epoch_probe)
         self._enc_5_feedforward_probe.clear()
+
         self._encoder_probe.save(epoch, probe_dir, probe_config["enc_block"], self._epoch_probe) 
         self._encoder_probe.clear()
 
         # Save the current epoch's decoder probes
         self._dec_embedding_probe.save(epoch, probe_dir, probe_config["dec_embed_layer"], self._epoch_probe)
         self._dec_embedding_probe.clear()
+
         self._dec_0_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_attn"], self._epoch_probe)
         self._dec_0_attn_probe.clear()
         self._dec_0_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_0_cross_attn"], self._epoch_probe)
         self._dec_0_cross_attn_probe.clear()
         self._dec_0_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_0_feedforward"], self._epoch_probe)
         self._dec_0_feedforward_probe.clear()
+
+        self._dec_1_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_1_attn"], self._epoch_probe)
+        self._dec_1_attn_probe.clear()
+        self._dec_1_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_1_cross_attn"], self._epoch_probe)
+        self._dec_1_cross_attn_probe.clear()
+        self._dec_1_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_1_feedforward"], self._epoch_probe)
+        self._dec_1_feedforward_probe.clear()
+
+        self._dec_2_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_2_attn"], self._epoch_probe)
+        self._dec_2_attn_probe.clear()
+        self._dec_2_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_2_cross_attn"], self._epoch_probe)
+        self._dec_2_cross_attn_probe.clear()
+        self._dec_2_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_2_feedforward"], self._epoch_probe)
+        self._dec_2_feedforward_probe.clear()
+
+        self._dec_3_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_3_attn"], self._epoch_probe)
+        self._dec_3_attn_probe.clear()
+        self._dec_3_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_3_cross_attn"], self._epoch_probe)
+        self._dec_3_cross_attn_probe.clear()
+        self._dec_3_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_3_feedforward"], self._epoch_probe)
+        self._dec_3_feedforward_probe.clear()
+
+        self._dec_4_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_4_attn"], self._epoch_probe)
+        self._dec_4_attn_probe.clear()
+        self._dec_4_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_4_cross_attn"], self._epoch_probe)
+        self._dec_4_cross_attn_probe.clear()
+        self._dec_4_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_4_feedforward"], self._epoch_probe)
+        self._dec_4_feedforward_probe.clear()
+
         self._dec_5_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_attn"], self._epoch_probe)
         self._dec_5_attn_probe.clear()
         self._dec_5_cross_attn_probe.save(epoch, probe_dir, probe_config["dec_layer_5_cross_attn"], self._epoch_probe)
         self._dec_5_cross_attn_probe.clear()
         self._dec_5_feedforward_probe.save(epoch, probe_dir, probe_config["dec_layer_5_feedforward"], self._epoch_probe)
         self._dec_5_feedforward_probe.clear()
+
         self._decoder_probe.save(epoch, probe_dir, probe_config["dec_block"], self._epoch_probe)
         self._decoder_probe.clear()
 
@@ -182,20 +270,54 @@ class TransformerProbe:
         # Encoder hooks
         #
         self._enc_embed_hook_handle = self._model._source_embed.register_forward_hook(self.enc_embedding_hook)
+
         self._enc0_attn_hook_handle = self._model._encoder._layers[0]._self_attention.register_forward_hook(self.enc0_attention_hook)
         self._enc0_feedforward_hook_handle = self._model._encoder._layers[0]._feed_forward.register_forward_hook(self.enc0_feedforward_hook)
+
+        self._enc1_attn_hook_handle = self._model._encoder._layers[1]._self_attention.register_forward_hook(self.enc1_attention_hook)
+        self._enc1_feedforward_hook_handle = self._model._encoder._layers[1]._feed_forward.register_forward_hook(self.enc1_feedforward_hook)
+
+        self._enc2_attn_hook_handle = self._model._encoder._layers[2]._self_attention.register_forward_hook(self.enc2_attention_hook)
+        self._enc2_feedforward_hook_handle = self._model._encoder._layers[2]._feed_forward.register_forward_hook(self.enc2_feedforward_hook)
+
+        self._enc3_attn_hook_handle = self._model._encoder._layers[3]._self_attention.register_forward_hook(self.enc3_attention_hook)
+        self._enc3_feedforward_hook_handle = self._model._encoder._layers[3]._feed_forward.register_forward_hook(self.enc3_feedforward_hook)
+
+        self._enc4_attn_hook_handle = self._model._encoder._layers[4]._self_attention.register_forward_hook(self.enc4_attention_hook)
+        self._enc4_feedforward_hook_handle = self._model._encoder._layers[4]._feed_forward.register_forward_hook(self.enc4_feedforward_hook)
+
         self._enc5_attn_hook_handle = self._model._encoder._layers[5]._self_attention.register_forward_hook(self.enc5_attention_hook)
         self._enc5_feedforward_hook_handle = self._model._encoder._layers[5]._feed_forward.register_forward_hook(self.enc5_feedforward_hook)
+
         self._encoder_hook_handle = self._model._encoder.register_forward_hook(self.encoder_hook)
 
         # Decoder hooks
         self._dec_embed_hook_handle = self._model._target_embed.register_forward_hook(self.dec_embedding_hook)
+
         self._dec0_attn_hook_handle = self._model._decoder._layers[0]._self_attention.register_forward_hook(self.dec0_attention_hook)
         self._dec0_cross_attn_hook_handle = self._model._decoder._layers[0]._cross_attention.register_forward_hook(self.dec0_cross_attention_hook)
         self._dec0_feedforward_hook_handle = self._model._decoder._layers[0]._feed_forward.register_forward_hook(self.dec0_feedforward_hook)
+
+        self._dec1_attn_hook_handle = self._model._decoder._layers[1]._self_attention.register_forward_hook(self.dec1_attention_hook)
+        self._dec1_cross_attn_hook_handle = self._model._decoder._layers[1]._cross_attention.register_forward_hook(self.dec1_cross_attention_hook)
+        self._dec1_feedforward_hook_handle = self._model._decoder._layers[1]._feed_forward.register_forward_hook(self.dec1_feedforward_hook)
+
+        self._dec2_attn_hook_handle = self._model._decoder._layers[2]._self_attention.register_forward_hook(self.dec2_attention_hook)
+        self._dec2_cross_attn_hook_handle = self._model._decoder._layers[2]._cross_attention.register_forward_hook(self.dec2_cross_attention_hook)
+        self._dec2_feedforward_hook_handle = self._model._decoder._layers[2]._feed_forward.register_forward_hook(self.dec2_feedforward_hook)
+
+        self._dec3_attn_hook_handle = self._model._decoder._layers[3]._self_attention.register_forward_hook(self.dec3_attention_hook)
+        self._dec3_cross_attn_hook_handle = self._model._decoder._layers[3]._cross_attention.register_forward_hook(self.dec3_cross_attention_hook)
+        self._dec3_feedforward_hook_handle = self._model._decoder._layers[3]._feed_forward.register_forward_hook(self.dec3_feedforward_hook)
+
+        self._dec4_attn_hook_handle = self._model._decoder._layers[4]._self_attention.register_forward_hook(self.dec4_attention_hook)
+        self._dec4_cross_attn_hook_handle = self._model._decoder._layers[4]._cross_attention.register_forward_hook(self.dec4_cross_attention_hook)
+        self._dec4_feedforward_hook_handle = self._model._decoder._layers[4]._feed_forward.register_forward_hook(self.dec4_feedforward_hook)
+
         self._dec5_attn_hook_handle = self._model._decoder._layers[5]._self_attention.register_forward_hook(self.dec5_attention_hook)
         self._dec5_cross_attn_hook_handle = self._model._decoder._layers[5]._cross_attention.register_forward_hook(self.dec5_cross_attention_hook)
         self._dec5_feedforward_hook_handle = self._model._decoder._layers[5]._feed_forward.register_forward_hook(self.dec5_feedforward_hook)
+
         self._decoder_hook_handle = self._model._decoder.register_forward_hook(self.decoder_hook)
 
         # Projection layer hook
@@ -207,6 +329,14 @@ class TransformerProbe:
         self._enc_embed_hook_handle.remove()
         self._enc0_attn_hook_handle.remove()
         self._enc0_feedforward_hook_handle.remove() 
+        self._enc1_attn_hook_handle.remove()
+        self._enc1_feedforward_hook_handle.remove() 
+        self._enc2_attn_hook_handle.remove()
+        self._enc2_feedforward_hook_handle.remove() 
+        self._enc3_attn_hook_handle.remove()
+        self._enc3_feedforward_hook_handle.remove() 
+        self._enc4_attn_hook_handle.remove()
+        self._enc4_feedforward_hook_handle.remove() 
         self._enc5_attn_hook_handle.remove()
         self._enc5_feedforward_hook_handle.remove() 
         self._encoder_hook_handle.remove() 
@@ -216,6 +346,18 @@ class TransformerProbe:
         self._dec0_attn_hook_handle.remove()
         self._dec0_cross_attn_hook_handle.remove()
         self._dec0_feedforward_hook_handle.remove()
+        self._dec1_attn_hook_handle.remove()
+        self._dec1_cross_attn_hook_handle.remove()
+        self._dec1_feedforward_hook_handle.remove()
+        self._dec2_attn_hook_handle.remove()
+        self._dec2_cross_attn_hook_handle.remove()
+        self._dec2_feedforward_hook_handle.remove()
+        self._dec3_attn_hook_handle.remove()
+        self._dec3_cross_attn_hook_handle.remove()
+        self._dec3_feedforward_hook_handle.remove()
+        self._dec4_attn_hook_handle.remove()
+        self._dec4_cross_attn_hook_handle.remove()
+        self._dec4_feedforward_hook_handle.remove()
         self._dec5_attn_hook_handle.remove()
         self._dec5_cross_attn_hook_handle.remove()
         self._dec5_feedforward_hook_handle.remove()
@@ -675,11 +817,11 @@ class TransformerProbe:
         # Split the query, key, value matrices into h parts along the embedding dimension
 
         # (batch, sequence_len, d_model) -> (batch, sequence_len, h, d_k) -> (batch, h, sequence_len, d_k)
-        query = query.view(query.shape[0], query.shape[1], module._h, module._d_k).transpose(1, 2)
-        key = key.view(key.shape[0], key.shape[1], module._h, module._d_k).transpose(1, 2)
-        value = value.view(value.shape[0], value.shape[1], module._h, module._d_k).transpose(1, 2)
+        query_head = query.view(query.shape[0], query.shape[1], module._h, module._d_k).transpose(1, 2)
+        key_head = key.view(key.shape[0], key.shape[1], module._h, module._d_k).transpose(1, 2)
+        value_head = value.view(value.shape[0], value.shape[1], module._h, module._d_k).transpose(1, 2)
 
-        x, attention_scores = MultiheadAttention.attention(query, key, value, mask, module._dropout)
+        x, attention_scores = MultiheadAttention.attention(query_head, key_head, value_head, mask, module._dropout)
 
         attn_head_in = dict(
             # q, k, v have the following shape:
@@ -693,10 +835,16 @@ class TransformerProbe:
             mask = mask.detach().cpu(),
 
             # query, key, value have the following shape:
-            # (1, h, seq_len, d_k) => (1, 8, 350, 64)
+            # (1, seq_len, d_model) => (1, 350, 512)
             query = query.detach().cpu().numpy(),
             key = key.detach().cpu().numpy(),
             value = value.detach().cpu().numpy(),
+
+            # query_head, key_head, value_head have the following shape:
+            # (1, h, seq_len, d_k) => (1, 8, 350, 64)
+            query_head = query_head.detach().cpu().numpy(),
+            key_head = key_head.detach().cpu().numpy(),
+            value_head = value_head.detach().cpu().numpy(),
 
             # Scores have the shape (1, h, seq_len, seq_len)
             # For this model it is (1, 8, 350, 350)
@@ -751,6 +899,113 @@ class TransformerProbe:
 
         # Store the feedforward layer probe in memory
         self._enc_0_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+
+    def enc1_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 1 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._enc_1_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+
+    def enc1_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # output.shape   = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 1 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._enc_1_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+
+
+    def enc2_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 2 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._enc_2_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+
+    def enc2_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # output.shape   = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 2 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._enc_2_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+
+
+    def enc3_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 3 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._enc_3_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+
+    def enc3_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # output.shape   = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 3 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._enc_3_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+
+
+    def enc4_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 4 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._enc_4_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+
+    def enc4_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # output.shape   = (1, seq_len, d_model) => (1, 350, 512)
+        # print("Encoder layer 4 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._enc_4_feedforward_probe.add_probe(self._input_count, in_val, out_val)
 
 
     def enc5_attention_hook(self, module, input, output) -> None:
@@ -838,6 +1093,7 @@ class TransformerProbe:
         # Store the multi-attention head probe in memory
         self._dec_0_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
         
+
     def dec0_feedforward_hook(self, module, input, output) -> None:
         # input[0].shape = (1, x, d_model) => (1, x, 512)
         # output.shape = (1, x, d_model) => (1, x, 512)
@@ -849,6 +1105,173 @@ class TransformerProbe:
         # Store the feedforward layer probe in memory
         self._dec_0_feedforward_probe.add_probe(self._input_count, in_val, out_val)
         
+
+    def dec1_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, x, d_model)
+        # input[2].shape = (1, x, d_model)
+        # input[3].shape = (1, x, x)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 1 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_1_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+        
+    def dec1_cross_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 1 cross-attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_1_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        
+    def dec1_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 1 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._dec_1_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        
+
+    def dec2_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, x, d_model)
+        # input[2].shape = (1, x, d_model)
+        # input[3].shape = (1, x, x)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 2 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_2_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+        
+    def dec2_cross_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 2 cross-attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_2_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        
+
+    def dec2_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 2 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._dec_2_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        
+
+    def dec3_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, x, d_model)
+        # input[2].shape = (1, x, d_model)
+        # input[3].shape = (1, x, x)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 3 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_3_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+        
+    def dec3_cross_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 3 cross-attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_3_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        
+
+    def dec3_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 3 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._dec_3_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        
+
+    def dec4_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, x, d_model)
+        # input[2].shape = (1, x, d_model)
+        # input[3].shape = (1, x, x)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 4 attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_4_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+
+        
+    def dec4_cross_attention_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
+        # input[2].shape = (1, seq_len, d_model)
+        # input[3].shape = (1, 1, 1, seq_len) => (1, 1, 1, 350)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 4 cross-attention hook called")
+
+        # Common processing for all multi-attention hooks
+        attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
+
+        # Store the multi-attention head probe in memory
+        self._dec_4_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        
+    def dec4_feedforward_hook(self, module, input, output) -> None:
+        # input[0].shape = (1, x, d_model) => (1, x, 512)
+        # output.shape = (1, x, d_model) => (1, x, 512)
+        # print("Decoder layer 4 feedforward hook called")
+
+        # Common processing for all feedforward layer hooks
+        in_val, out_val = self.__extract_input_output(input, output)
+
+        # Store the feedforward layer probe in memory
+        self._dec_4_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        
+
     def dec5_attention_hook(self, module, input, output) -> None:
         # input[0].shape = (1, x, d_model) => (1, x, 512)
         # input[1].shape = (1, x, d_model)
@@ -863,6 +1286,7 @@ class TransformerProbe:
         # Store the multi-attention head probe in memory
         self._dec_5_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
         
+
     def dec5_cross_attention_hook(self, module, input, output) -> None:
         # input[0].shape = (1, x, d_model) => (1, x, 512)
         # input[1].shape = (1, seq_len, d_model) => (1, 350, 512)
