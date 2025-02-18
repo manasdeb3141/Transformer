@@ -36,6 +36,7 @@ class TransformerAnalyzer:
 
         # Function to analyze the Transformer probes. This is populated
         # by the class that inherits this class
+        self._test_id = None
         self._analyze_probes = None
 
     def __load_tokenizers(self):
@@ -170,7 +171,7 @@ class TransformerAnalyzer:
         self._projection_probe.load(epoch, self._probe_dir, self._probe_config["proj_layer"], load_epoch)
 
 
-    def run(self) -> None:
+    def run(self, **kwargs) -> None:
         if self._probe_dir.exists():
             if self._probe_dir.is_dir() == False:
                 raise ValueError(f"Invalid probe directory name: {str(self._probe_dir)}")
@@ -188,6 +189,9 @@ class TransformerAnalyzer:
             
         # The member variable _analyze_probes is set by the class that inherits this class
         if self._analyze_probes is not None:
+            if "test" in kwargs:
+                self._test_id = kwargs["test"]
+
             self._analyze_probes()
 
  
