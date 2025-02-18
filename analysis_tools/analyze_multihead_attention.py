@@ -209,12 +209,16 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
 
         return QKV_dict 
 
-    def __get_head_query_key_value(self, sentence_id : int, N_src_tokens : int):
+    def __get_head_query_key_value(self, sentence_id : int, N_src_tokens : int = None):
     # Attention layer 0
         enc_attn_input = self._enc_0_attn_probe._probe_in[sentence_id]
         query = enc_attn_input["query_head"].squeeze()
         key = enc_attn_input["key_head"].squeeze()
         value = enc_attn_input["value_head"].squeeze()
+
+        if N_src_tokens is None:
+            N_src_tokens = query.shape[0]
+
         query_0 = query[:,:N_src_tokens]
         key_0 = key[:,:N_src_tokens]
         value_0 = value[:,:N_src_tokens]
@@ -272,6 +276,33 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
                      'attention_5': {"query": query_5, "key": key_5, "value": value_5} }
 
         return QKV_dict 
+
+    def __get_attention_scores(self, sentence_id, N_src_tokens, attention_layer) -> np.array:
+        match attention_layer:
+            case 0:
+                enc_attn_input = self._enc_0_attn_probe._probe_in[sentence_id]
+
+            case 1:
+                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+
+            case 2:
+                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+
+            case 3:
+                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+
+            case 4:
+                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+
+            case 5:
+                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+
+            case _:
+                print(f"Invalid attention layer {attention_layer}")
+                return
+
+        attention_scores = enc_attn_input["attention_scores"].squeeze()
+        return attention_scores[:, :N_src_tokens, :N_src_tokens]
 
 
     def __stack_QKV_arrays(self, QKV_list, N_inputs):
@@ -661,6 +692,35 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
 
         plt.show(block=False)
 
+    def __plot_attention_scores(self, attention_scores, input_words, plot_title) -> None:
+        N_heads = attention_scores.shape[0]
+
+        fig, axs = plt.subplots(2, 4)
+        for head in range(N_heads):
+            a = head//4
+            b = head%4
+            attention_scores_matrix = attention_scores[head]
+            # im = axs[a, b].imshow(attention_scores_matrix, cmap=plt.cm.Wistia, interpolation='none', origin='lower', extent=[0, attention_scores.shape[1]-1, 0, attention_scores.shape[2]-1])
+            im = axs[a, b].imshow(attention_scores_matrix, cmap=plt.cm.Wistia, interpolation='none', origin='lower')
+
+            # Add text annotations
+            for i in range(attention_scores_matrix.shape[0]):
+                for j in range(attention_scores_matrix.shape[1]):
+                    text = axs[a, b].text(j, i, f"{attention_scores_matrix[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+
+            axs[a, b].set_xticks(range(0, len(input_words)), input_words, rotation=45)
+            axs[a, b].set_yticks(range(0, len(input_words)), input_words, rotation=45)
+            axs[a, b].set_aspect('auto')
+            axs[a, b].set_title(f"Head {head}")
+
+        fig.suptitle(plot_title)
+
+        plt.subplots_adjust(hspace=0.8, right=0.8)
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+        fig.colorbar(im, cax=cbar_ax)
+        plt.show(block=False)
+
+
     def __get_min_max_QKV_matrix(self, QKV_list, epochs_to_analyze):
         # Initialization to extreme values
         min_val = 1e9
@@ -804,10 +864,10 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
 
             # Compute the entropy and mutual information for each dimension of the query, key and value arrays
             QKV_entropy_dict = self.__compute_head_QKV_entropy(QKV_dict)
-            # QKV_mi_dict = self.__compute_head_QKV_mi(QKV_dict)
+            QKV_mi_dict = self.__compute_head_QKV_mi(QKV_dict)
 
             QKV_entropy_list.append(QKV_entropy_dict)
-            # QKV_mi_list.append(QKV_mi_dict)
+            QKV_mi_list.append(QKV_mi_dict)
 
         # Plot the entropy values for each dimension of the query array across epochs
         min_val, max_val = self.__get_min_max_QKV_head(QKV_entropy_list, epochs_to_analyze)
@@ -815,10 +875,38 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
         self.__plot_QKV_head_entropy(QKV_entropy_list, min_val, max_val, epochs_to_analyze, "key")
         self.__plot_QKV_head_entropy(QKV_entropy_list, min_val, max_val, epochs_to_analyze, "value")
 
-        # min_val, max_val = self.__get_min_max_QKV_head(QKV_mi_list, epochs_to_analyze, False)
-        # self.__plot_QKV_head_mi(QKV_mi_list, min_val, max_val, N_src_tokens, epochs_to_analyze, "qk_mi", "Query-Key")
-        # self.__plot_QKV_head_mi(QKV_mi_list, min_val, max_val, N_src_tokens, epochs_to_analyze, "qv_mi", "Query-Value")
-        # self.__plot_QKV_head_mi(QKV_mi_list, min_val, max_val, N_src_tokens, epochs_to_analyze, "kv_mi", "Key-Value")
+        min_val, max_val = self.__get_min_max_QKV_head(QKV_mi_list, epochs_to_analyze, False)
+        self.__plot_QKV_head_mi(QKV_mi_list, min_val, max_val, N_src_tokens, epochs_to_analyze, "qk_mi", "Query-Key")
+        self.__plot_QKV_head_mi(QKV_mi_list, min_val, max_val, N_src_tokens, epochs_to_analyze, "qv_mi", "Query-Value")
+        self.__plot_QKV_head_mi(QKV_mi_list, min_val, max_val, N_src_tokens, epochs_to_analyze, "kv_mi", "Key-Value")
+
+    def __process_attention_scores(self):
+        print("Computing the attention scores ...")
+        # epochs_to_analyze = np.arange(0, 20, 1)
+        # epochs_to_analyze = [0, 4, 9, 14, 19]
+
+        # Input sentence ID
+        sentence_id = 0
+        epoch = 19
+        attention_layer = 5
+
+        # For this epoch, load all the encoder layer probe files from disk
+        super().load_encoder_probes(epoch)
+
+        # Get the number of tokens of the sentence
+        N_src_tokens, src_sentence_tokens, N_tgt_tokens, tgt_sentence_tokens = self. __get_sentence_tokens(sentence_id)
+
+        # Get the input sentence words corresponding to the tokens
+        input_words = list()
+        for token in src_sentence_tokens:
+            input_words.append(super().get_src_word_from_token(token))
+
+        # Get the attention scores for all the heads of the specified attention layer
+        attention_scores = self.__get_attention_scores(sentence_id, N_src_tokens, attention_layer)
+
+        # Plot the attention scores
+        plot_title = f"Attention Scores of encoder layer {attention_layer}"
+        self.__plot_attention_scores(attention_scores, input_words, plot_title)
 
 
     def __process_probes(self):
@@ -838,6 +926,9 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
                 # Compute the column entropy and mutual information of the Query, Key and Value heads
                 # of the multihead attention layers
                 self.__process_QKV_heads()
+
+            case 3:
+                self.__process_attention_scores()
 
             case _:
                 print("Invalid test id")
