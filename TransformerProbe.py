@@ -575,6 +575,7 @@ class TransformerProbe:
 
                 dataset_fname = dataset_dir / "validation_dataset.pt"
                 if dataset_fname.exists():
+                    print(f"Loading dataset file: {str(dataset_fname)}")
                     val_ds_raw = torch.load(dataset_fname, weights_only=False)
                 else:
                     raise ValueError(f"Dataset file {str(dataset_fname)} does not exist")
