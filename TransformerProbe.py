@@ -628,7 +628,7 @@ class TransformerProbe:
             # Load the model weights for the epoch
             model_filename = model_dir / f"transformer_epoch_{epoch:02d}.pt"
             print(f"Loading model file: {str(model_filename)}")
-            state = torch.load(str(model_filename))
+            state = torch.load(str(model_filename), weights_only=False)
             self._model.load_state_dict(state['model_state_dict'])
 
             # Total number of training steps across all epochs
@@ -756,10 +756,11 @@ class TransformerProbe:
                     batch_iterator.write(f"{f'TARGET: ':>12}{target_text}")
                     batch_iterator.write(f"{f'PREDICTED: ':>12}{model_out_text}\n")
 
-                if self._input_count == (max_validn_count-1):
-                    batch_iterator.write('-'*80)
-
                 self._input_count += 1
+
+                if self._input_count == max_validn_count:
+                    batch_iterator.write('-'*80)
+                    break
 
         # Compute the char error rate 
         metric = torchmetrics.text.CharErrorRate()
