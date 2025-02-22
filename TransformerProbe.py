@@ -536,7 +536,7 @@ class TransformerProbe:
             RuntimeError("TransformerProbe.run(): Model config dictionary does not contain probe_dir")
             return
 
-        key = "dataset_folder"
+        key = "dataset_dir"
         if key in config:
             dataset_folder = config[key]
         else:
@@ -573,9 +573,9 @@ class TransformerProbe:
                 if dataset_dir.exists() == False:
                     raise ValueError(f"Dataset directory {str(dataset_dir)} does not exist")
 
-                dataset_fname = dataset_dir / "validataion_dataset.pt"
+                dataset_fname = dataset_dir / "validation_dataset.pt"
                 if dataset_fname.exists():
-                    valid_ds_raw = torch.load(dataset_fname)
+                    val_ds_raw = torch.load(dataset_fname, weights_only=False)
                 else:
                     raise ValueError(f"Dataset file {str(dataset_fname)} does not exist")
             else:
