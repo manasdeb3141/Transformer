@@ -4,6 +4,7 @@ sys.path.append('../utils')
 
 import numpy as np
 from mutual_info_estimator import MutualInfoEstimator
+from tqdm import tqdm
 
 
 def compute_entropy(query, key, value, N_dimensions) -> dict:
@@ -16,20 +17,26 @@ def compute_entropy(query, key, value, N_dimensions) -> dict:
     K_entropy_list = list()
     V_entropy_list = list()
 
-    for n in range(N_dimensions):
+    for n in tqdm(range(N_dimensions)):
         Y = query[:, n]
         MI_estimator.set_inputs(Y, Y)
-        H = MI_estimator.kraskov_entropy()
+        # H = MI_estimator.kraskov_entropy()
+        prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        H = mi_dict["H_X"]
         Q_entropy_list.append(H)
 
         Y = key[:, n]
         MI_estimator.set_inputs(Y, Y)
-        H = MI_estimator.kraskov_entropy()
+        # H = MI_estimator.kraskov_entropy()
+        prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        H = mi_dict["H_X"]
         K_entropy_list.append(H)
 
         Y = value[:, n]
         MI_estimator.set_inputs(Y, Y)
-        H = MI_estimator.kraskov_entropy()
+        # H = MI_estimator.kraskov_entropy()
+        prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        H = mi_dict["H_X"]
         V_entropy_list.append(H)
 
     entropy_dict = dict(Q_entropy_list=Q_entropy_list, K_entropy_list=K_entropy_list, V_entropy_list=V_entropy_list)
@@ -48,6 +55,7 @@ def compute_QKV_matrix_entropy(QKV_dict : dict) -> dict:
     N_attention_layers = len(QKV_dict)    
 
     for i in range(N_attention_layers):
+        print(f"Computing the entropy for attention layer {i} ...")
         x = QKV_dict[f'attention_{i}']["x"]
         query = QKV_dict[f'attention_{i}']["query"]
         key = QKV_dict[f'attention_{i}']["key"]

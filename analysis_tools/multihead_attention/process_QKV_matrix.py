@@ -59,6 +59,12 @@ def plot_QKV_matrix_entropy(QKV_entropy_list, N_attention_layers, min_val, max_v
     cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
     fig.colorbar(im, cax=cbar_ax)
 
+    # Get the current figure manager to maximize the plot window
+    fig_manager = plt.get_current_fig_manager()
+    fig_manager.window.state('zoomed')
+
+    plt.savefig("QKV_matrix_entropy.png")
+
     plt.show(block=False)
 
 
@@ -96,13 +102,16 @@ def process_QKV_matrix(analyzer : TransformerAnalyzer):
             QKV_dict = get_query_key_value_matrix(analyzer, i, N_src_tokens)
             QKV_list.append(QKV_dict)
 
-
         # Concatenate the query, key and value arrays horizontally for all the input sentences of this epoch
         QKV_stacked_dict = stack_QKV_matrix(QKV_list, N_inputs)
 
         # Compute the entropy and mutual information for each dimension of the query, key and value arrays
+        print(f"Computing the entropy for epoch {epoch} ...")
         QKV_entropy_dict = compute_QKV_matrix_entropy(QKV_stacked_dict)
         QKV_entropy_list.append(QKV_entropy_dict)
+
+    # Save the entropy values for each dimension of the Q,K,V arrays across epochs
+    torch.save(QKV_entropy_list, "QKV_entropy_list.pt")
 
     # Plot the entropy values for each dimension of the query array across epochs
     min_val, max_val = get_min_max_QKV_matrix(QKV_entropy_list, epochs_to_analyze, analyzer.N_attention_layers)

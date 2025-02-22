@@ -60,7 +60,7 @@ class PdfEstimator:
 
         # Define the parameter grid to search
         param_grid = {
-            'bandwidth': np.linspace(0.1, 2, 50),
+            'bandwidth': np.linspace(0.01, 1, 100),
             'kernel': ['gaussian']
             # 'kernel': ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine']
         }
@@ -75,8 +75,9 @@ class PdfEstimator:
         best_params = grid.best_params_
         self._kde = grid.best_estimator_
 
-        print("KDE best params:")
-        print(best_params) 
+        # print("KDE best params:")
+        # print(best_params) 
+        assert((best_params['bandwidth'] > 0.01) and (best_params['bandwidth'] < 1.0))
 
     def __sklearn_pdf(self, pdf_points : np.ndarray) -> np.ndarray:
         # Use the best estimator to make predictions
@@ -85,15 +86,15 @@ class PdfEstimator:
         return pdf_estimate
 
     def fit_data(self, samples : np.ndarray) -> None:
-        start_time = time.time()
+        #start_time = time.time()
 
         if self._kde_type == "statsmodel":
             self.__statsmodel_fit_data(samples)
         else:
             self.__sklearn_fit_data(samples)
 
-        end_time = time.time()
-        print(f"PdfEstimator fit_data() took {end_time-start_time} seconds to run")
+        #end_time = time.time()
+        #print(f"PdfEstimator fit_data() took {end_time-start_time} seconds to run")
 
     def pdf(self, pdf_points : np.ndarray) -> np.ndarray:
         # Use the selected KDE estimator to make predictions
