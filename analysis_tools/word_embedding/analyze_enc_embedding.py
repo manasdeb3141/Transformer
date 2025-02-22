@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('..')
+sys.path.append('../..')
 sys.path.append('../utils')
 
 import torch
@@ -125,8 +125,8 @@ def main():
     cfg_obj = LangModelConfig()
     model_config = cfg_obj.get_config()
 
-    model_config["tokenizer_dir"] = "../model_data/opus_books_en_fr/tokens"
-    model_config["analyze_dir"] = "../model_data/opus_books_en_fr/probes_8"
+    model_config["tokenizer_dir"] = "../../model_data/opus_books_en_fr/tokens"
+    model_config["analyze_dir"] = "../../model_data/opus_books_en_fr/probes_8"
 
     # Dictionary of probe file names
     probe_config = cfg_obj.get_probes()

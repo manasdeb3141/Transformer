@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('..')
+sys.path.append('../..')
 sys.path.append('../utils')
 
 import torch
@@ -77,28 +77,48 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
 
         return X_reduced, Y_reduced
 
-    def __compute_matrix_mi(self, X : np.array, Y : np.array, N_tokens : int) -> None:
+    def __compute_matrix_mi(self, X : np.array, Y : np.array, N_rows : int) -> None:
         # X_reduced, Y_reduced = self.__pca_dimensionality_reduction(X, Y)
-        i = np.arange(0, N_tokens, 1)
-        j = np.arange(0, N_tokens, 1)
+        i = np.arange(0, N_rows, 1)
+        j = np.arange(0, N_rows, 1)
         i_pos, j_pos = np.meshgrid(i, j)
         ij_pos = np.vstack([i_pos.ravel(), j_pos.ravel()]).T
 
-        # Zero out the mutual information matrix
-        query_MI = np.zeros((N_tokens, N_tokens))
+        # Initialize the mutual information matrix
+        query_MI = np.zeros((N_rows, N_rows))
 
         for i, j in ij_pos:
             X_row = X[i]
-            Y_row = Y[i]
+            Y_row = Y[j]
 
             self._MI_estimator.set_inputs(X_row, Y_row)
             # MI_data = self._MI_estimator.kraskov_MI()
-            # query_MI[x, y] = MI_data["MI"]
+            # query_MI[i, j] = MI_data["MI"]
             MI, _ = self._MI_estimator.MINE_MI()
             query_MI[i, j] = MI
 
         MI_dict = dict(x_pos=i_pos, y_pos=j_pos, MI=query_MI)
         return MI_dict
+
+    def __compute_matrix_mi_symmetric(self, X : np.array, Y : np.array, N_rows : int) -> None:
+        # X_reduced, Y_reduced = self.__pca_dimensionality_reduction(X, Y)
+        # Initialize the mutual information matrix
+        MI_mat = np.zeros((N_rows, N_rows))
+        temp = np.triu_indices(X.shape[0], k=0)
+        upper_idx = np.vstack((temp[0], temp[1])).T
+
+        for i, j in upper_idx:
+            X_row = X[i]
+            Y_row = Y[j]
+
+            self._MI_estimator.set_inputs(X_row, Y_row)
+            # MI_data = self._MI_estimator.kraskov_MI()
+            # MI_mat[i, j] = MI_data["MI"]
+            MI, _ = self._MI_estimator.MINE_MI()
+            MI_mat[i, j] = MI
+        
+        MI_mat = MI_mat + MI_mat.T - np.diag(np.diag(MI_mat))
+        return MI_mat
 
     def __compute_head_mi(self, query_head, key_head, value_head, seq_len) -> dict:
         # Contains the mutual information of the input x and the 
@@ -111,22 +131,22 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
             X = query_head[x]
             Y = key_head[x]
             self._MI_estimator.set_inputs(X, Y)
-            MI = self._MI_estimator.kraskov_MI()["MI"]
-            # MI = self._MI_estimator.MINE_MI()
+            # MI = self._MI_estimator.kraskov_MI()["MI"]
+            MI = self._MI_estimator.MINE_MI()
             query_key_MI_list.append(MI)
 
             X = query_head[x]
             Y = value_head[x]
             self._MI_estimator.set_inputs(X, Y)
-            MI = self._MI_estimator.kraskov_MI()["MI"]
-            #MI = self._MI_estimator.MINE_MI()
+            # MI = self._MI_estimator.kraskov_MI()["MI"]
+            MI = self._MI_estimator.MINE_MI()
             query_value_MI_list.append(MI)
 
             X = key_head[x]
             Y = value_head[x]
             self._MI_estimator.set_inputs(X, Y)
-            MI = self._MI_estimator.kraskov_MI()["MI"]
-            #MI = self._MI_estimator.MINE_MI()
+            # MI = self._MI_estimator.kraskov_MI()["MI"]
+            MI = self._MI_estimator.MINE_MI()
             key_value_MI_list.append(MI)
 
         mi_dict = dict(QK_mi_list=query_key_MI_list, QV_mi_list=query_value_MI_list, KV_mi_list=key_value_MI_list)
@@ -286,16 +306,16 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
                 enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
 
             case 2:
-                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+                enc_attn_input = self._enc_2_attn_probe._probe_in[sentence_id]
 
             case 3:
-                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+                enc_attn_input = self._enc_3_attn_probe._probe_in[sentence_id]
 
             case 4:
-                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+                enc_attn_input = self._enc_4_attn_probe._probe_in[sentence_id]
 
             case 5:
-                enc_attn_input = self._enc_1_attn_probe._probe_in[sentence_id]
+                enc_attn_input = self._enc_5_attn_probe._probe_in[sentence_id]
 
             case _:
                 print(f"Invalid attention layer {attention_layer}")
@@ -427,17 +447,20 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
             X = x[:, n]
             Y = query[:, n]
             self._MI_estimator.set_inputs(X, Y)
-            MI = self._MI_estimator.kraskov_MI()["MI"]
+            # MI = self._MI_estimator.kraskov_MI()["MI"]
+            MI = self._MI_estimator.MINE_MI()
             xQ_mi_list.append(MI)
 
             Y = key[:, n]
             self._MI_estimator.set_inputs(X, Y)
-            MI = self._MI_estimator.kraskov_MI()["MI"]
+            # MI = self._MI_estimator.kraskov_MI()["MI"]
+            MI = self._MI_estimator.MINE_MI()
             xK_mi_list.append(MI)
 
             Y = value[:, n]
             self._MI_estimator.set_inputs(X, Y)
-            MI = self._MI_estimator.kraskov_MI()["MI"]
+            # MI = self._MI_estimator.kraskov_MI()["MI"]
+            MI = self._MI_estimator.MINE_MI()
             xV_mi_list.append(MI)
 
         mi_dict = dict(xQ_mi_list=xQ_mi_list, xK_mi_list=xK_mi_list, xV_mi_list=xV_mi_list)
@@ -571,13 +594,13 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
                 key_head = key[j]
                 value_head = value[j]
 
-                entropy_dict = self.__compute_head_mi(query_head, key_head, value_head, seq_len)
+                mi_dict = self.__compute_head_mi(query_head, key_head, value_head, seq_len)
 
                 # The dictionary contains the list of mutual information values between the query and key 
                 # attention head arrays across the seq_len dimension
-                QK_head_mi_list.append(entropy_dict["QK_mi_list"])
-                QV_head_mi_list.append(entropy_dict["QV_mi_list"])
-                KV_head_mi_list.append(entropy_dict["KV_mi_list"])
+                QK_head_mi_list.append(mi_dict["QK_mi_list"])
+                QV_head_mi_list.append(mi_dict["QV_mi_list"])
+                KV_head_mi_list.append(mi_dict["KV_mi_list"])
 
             QKV_entropy_dict[f'attention_{i}'] = {"qk_mi": QK_head_mi_list, "qv_mi": QV_head_mi_list, "kv_mi": KV_head_mi_list}
 
@@ -718,6 +741,38 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
         plt.subplots_adjust(hspace=0.8, right=0.8)
         cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
         fig.colorbar(im, cax=cbar_ax)
+        plt.show(block=False)
+
+    def __plot_mi_attention_scores(self, MI_mat, input_words, attention_scores, plot_title) -> None:
+        fig, axs = plt.subplots(1, 2)
+
+        # im0 = axs[0].imshow(MI, cmap=plt.cm.jet, origin='lower')
+        im0 = axs[0].imshow(MI_mat, cmap=plt.cm.jet)
+        axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=45)
+        axs[0].set_yticks(range(0, len(input_words)), input_words, rotation=45)
+        axs[0].set_aspect('auto')
+        axs[0].set_title(f"Mutual Information between Q and K heads")
+        fig.colorbar(im0, ax=axs[0])
+
+        # Plot the attention scores
+        # im1 = axs[1].imshow(attention_scores, cmap=plt.cm.Wistia, interpolation='none', origin='lower')
+        im1 = axs[1].imshow(attention_scores, cmap=plt.cm.Wistia)
+        for i in range(attention_scores.shape[0]):
+            for j in range(attention_scores.shape[1]):
+                text = axs[1].text(j, i, f"{attention_scores[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+        axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=45)
+        axs[1].set_yticks(range(0, len(input_words)), input_words, rotation=45)
+        axs[1].set_aspect('auto')
+        axs[1].set_title(f"Attention scores")
+        fig.colorbar(im1, ax=axs[1])
+
+        fig.suptitle(plot_title)
+
+        # Get the current figure manager to maximize the plot window
+        fig_manager = plt.get_current_fig_manager()
+        fig_manager.window.showMaximized()
+
+        plt.savefig("mi_attention_scores.png")
         plt.show(block=False)
 
 
@@ -908,6 +963,39 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
         plot_title = f"Attention Scores of encoder layer {attention_layer}"
         self.__plot_attention_scores(attention_scores, input_words, plot_title)
 
+    def __process_mi_attention_scores(self):
+        head = 0
+        sentence_id = 0
+        epoch = 0
+        attention_layer = 0
+
+        print("Computing the mutual information and attention scores with the following parameters:")
+        print(f"Head: {head}, Sentence ID: {sentence_id}, Epoch: {epoch}, Attention Layer: {attention_layer}")
+
+        super().load_encoder_probes(epoch)
+        N_src_tokens, src_sentence_tokens, N_tgt_tokens, tgt_sentence_tokens = self. __get_sentence_tokens(sentence_id)
+        QKV_dict = self.__get_head_query_key_value(sentence_id, N_src_tokens)
+
+        query = QKV_dict[f'attention_{attention_layer}']["query"]
+        key = QKV_dict[f'attention_{attention_layer}']["key"]
+
+        seq_len = query.shape[1]
+        query_head = query[head]
+        key_head = key[head]
+
+        MI_dict = self.__compute_matrix_mi(query_head, key_head, N_src_tokens)
+        MI_mat = MI_dict["MI"]
+
+        # Get the input sentence words corresponding to the tokens
+        input_words = list()
+        for token in src_sentence_tokens:
+            input_words.append(super().get_src_word_from_token(token))
+
+        attention_scores = self.__get_attention_scores(sentence_id, N_src_tokens, attention_layer)
+
+        plot_title = f"Encoder attention layer {attention_layer}, head {head}, epoch {epoch}"
+        self.__plot_mi_attention_scores(MI_mat, input_words, attention_scores[attention_layer], plot_title)
+
 
     def __process_probes(self):
         print(f"Running test: {self._test_id}")
@@ -930,6 +1018,9 @@ class MultiheadAttentionAnalyzer(TransformerAnalyzer) :
             case 3:
                 self.__process_attention_scores()
 
+            case 4:
+                self.__process_mi_attention_scores()
+
             case _:
                 print("Invalid test id")
                 return
@@ -949,8 +1040,8 @@ def main():
     cfg_obj = LangModelConfig()
     model_config = cfg_obj.get_config()
 
-    model_config["tokenizer_dir"] = "../model_data/opus_books_en_fr/tokens"
-    model_config["analyze_dir"] = "../model_data/opus_books_en_fr/probes_8"
+    model_config["tokenizer_dir"] = "../../model_data/opus_books_en_fr/tokens"
+    model_config["analyze_dir"] = "../../model_data/opus_books_en_fr/probes_8"
 
     # Dictionary of probe file names
     probe_config = cfg_obj.get_probes()
