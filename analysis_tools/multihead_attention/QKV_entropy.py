@@ -20,23 +20,23 @@ def compute_entropy(query, key, value, N_dimensions) -> dict:
     for n in tqdm(range(N_dimensions)):
         Y = query[:, n]
         MI_estimator.set_inputs(Y, Y)
-        # H = MI_estimator.kraskov_entropy()
-        prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
-        H = mi_dict["H_X"]
+        H = MI_estimator.kraskov_entropy()
+        #prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        #H = mi_dict["H_X"]
         Q_entropy_list.append(H)
 
         Y = key[:, n]
         MI_estimator.set_inputs(Y, Y)
-        # H = MI_estimator.kraskov_entropy()
-        prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
-        H = mi_dict["H_X"]
+        H = MI_estimator.kraskov_entropy()
+        #prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        #H = mi_dict["H_X"]
         K_entropy_list.append(H)
 
         Y = value[:, n]
         MI_estimator.set_inputs(Y, Y)
-        # H = MI_estimator.kraskov_entropy()
-        prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
-        H = mi_dict["H_X"]
+        H = MI_estimator.kraskov_entropy()
+        #prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        #H = mi_dict["H_X"]
         V_entropy_list.append(H)
 
     entropy_dict = dict(Q_entropy_list=Q_entropy_list, K_entropy_list=K_entropy_list, V_entropy_list=V_entropy_list)

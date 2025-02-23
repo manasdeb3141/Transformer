@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Tuple
 from sklearn.decomposition import PCA
+import platform
 
 # Classes implemented by this application
 from ModelConfig import LangModelConfig
@@ -61,9 +62,12 @@ def plot_QKV_matrix_entropy(QKV_entropy_list, N_attention_layers, min_val, max_v
 
     # Get the current figure manager to maximize the plot window
     fig_manager = plt.get_current_fig_manager()
-    fig_manager.window.state('zoomed')
+    if platform.system() == 'Linux':
+        fig_manager.window.showMaximized()
+    else:
+        fig_manager.window.state('zoomed')
 
-    plt.savefig("QKV_matrix_entropy.png")
+    plt.savefig("data/QKV_matrix_entropy.png")
 
     plt.show(block=False)
 
@@ -71,47 +75,55 @@ def plot_QKV_matrix_entropy(QKV_entropy_list, N_attention_layers, min_val, max_v
 
 def process_QKV_matrix(analyzer : TransformerAnalyzer):
     print("Computing the entropy of each dimension of the Query, Key and Value arrays ...")
+    QKV_entropy_filename = 'data/QKV_entropy_list.pt'
 
     epochs_to_analyze = np.arange(0, 20, 1)
     # epochs_to_analyze = [0, 4, 9, 14, 19]
 
-    # These will contain the entropy values for the query, key and value arrays
-    # for each attention layer for all epochs
-    QKV_entropy_list = list()
+    QKV_entropy_list = None
+    QKV_entropy_file = Path(QKV_entropy_filename)
+    if QKV_entropy_file.is_file():
+        print("QKV entropy list file found. Loading it ...")
+        QKV_entropy_list = torch.load(QKV_entropy_file, weights_only=False)
 
-    # Analyze the probes of the Multihead Attention layers of the encoder for each epoch
-    for epoch in epochs_to_analyze:
-        # For this epoch, load all the encoder layer probe files from disk
-        analyzer.load_encoder_probes(epoch)
+    if not QKV_entropy_list:
+        # These will contain the entropy values for the query, key and value arrays
+        # for each attention layer for all epochs
+        QKV_entropy_list = list()
 
-        # Number of input sentences in this epoch
-        N_inputs = len(analyzer.encoder_probe._probe_in)
+        # Analyze the probes of the Multihead Attention layers of the encoder for each epoch
+        for epoch in epochs_to_analyze:
+            # For this epoch, load all the encoder layer probe files from disk
+            analyzer.load_encoder_probes(epoch)
 
-        # This will contain the QKV dictionaries for all the attention layers
-        # of all the input sentences of this epoch
-        QKV_list = list()
+            # Number of input sentences in this epoch
+            N_inputs = len(analyzer.encoder_probe._probe_in)
 
-        # Iterate across all the input sentences of this epoch and get the query, key and value arrays.
-        # Stack the arrays horizontally after each iteration
-        for i in range(N_inputs):
-            N_src_tokens, src_sentence_tokens, N_tgt_tokens, tgt_sentence_tokens = get_sentence_tokens(analyzer, i)
-            # print(f"Source sentence: {self._tokenizer_src.decode(src_sentence_tokens)}")
-            # print(f"Target sentence: {self._tokenizer_tgt.decode(tgt_sentence_tokens)}")
+            # This will contain the QKV dictionaries for all the attention layers
+            # of all the input sentences of this epoch
+            QKV_list = list()
 
-            # Get the query, key, value arrays for all the attention layers of this input sentence
-            QKV_dict = get_query_key_value_matrix(analyzer, i, N_src_tokens)
-            QKV_list.append(QKV_dict)
+            # Iterate across all the input sentences of this epoch and get the query, key and value arrays.
+            # Stack the arrays horizontally after each iteration
+            for i in range(N_inputs):
+                N_src_tokens, src_sentence_tokens, N_tgt_tokens, tgt_sentence_tokens = get_sentence_tokens(analyzer, i)
+                # print(f"Source sentence: {self._tokenizer_src.decode(src_sentence_tokens)}")
+                # print(f"Target sentence: {self._tokenizer_tgt.decode(tgt_sentence_tokens)}")
 
-        # Concatenate the query, key and value arrays horizontally for all the input sentences of this epoch
-        QKV_stacked_dict = stack_QKV_matrix(QKV_list, N_inputs)
+                # Get the query, key, value arrays for all the attention layers of this input sentence
+                QKV_dict = get_query_key_value_matrix(analyzer, i, N_src_tokens)
+                QKV_list.append(QKV_dict)
 
-        # Compute the entropy and mutual information for each dimension of the query, key and value arrays
-        print(f"Computing the entropy for epoch {epoch} ...")
-        QKV_entropy_dict = compute_QKV_matrix_entropy(QKV_stacked_dict)
-        QKV_entropy_list.append(QKV_entropy_dict)
+            # Concatenate the query, key and value arrays horizontally for all the input sentences of this epoch
+            QKV_stacked_dict = stack_QKV_matrix(QKV_list, N_inputs)
 
-    # Save the entropy values for each dimension of the Q,K,V arrays across epochs
-    torch.save(QKV_entropy_list, "QKV_entropy_list.pt")
+            # Compute the entropy and mutual information for each dimension of the query, key and value arrays
+            print(f"Computing the entropy for epoch {epoch} ...")
+            QKV_entropy_dict = compute_QKV_matrix_entropy(QKV_stacked_dict)
+            QKV_entropy_list.append(QKV_entropy_dict)
+
+        # Save the entropy values for each dimension of the Q,K,V arrays across epochs
+        torch.save(QKV_entropy_list, QKV_entropy_filename)
 
     # Plot the entropy values for each dimension of the query array across epochs
     min_val, max_val = get_min_max_QKV_matrix(QKV_entropy_list, epochs_to_analyze, analyzer.N_attention_layers)

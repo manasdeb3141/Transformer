@@ -52,8 +52,8 @@ class MutualInfoEstimator:
 
         if continuous:
             # Integration of continuous points using Simpson's rule
-            P_X = simpson(P_XY, None, axis=0)
-            P_Y = simpson(P_XY, None, axis=1)
+            P_X = simpson(P_XY, axis=0)
+            P_Y = simpson(P_XY, axis=1)
         else:
             # Summation of discrete points
             P_X = np.sum(P_XY, axis=0)
