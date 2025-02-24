@@ -111,3 +111,77 @@ def stack_QKV_matrix(QKV_list, N_inputs):
                  'attention_5': {"x": x_5_array, "query": query_5_array, "key": key_5_array, "value": value_5_array} }
 
     return QKV_dict 
+
+
+def stack_FF_matrix(FF_list, N_inputs):
+    ff_in_0_array = None; ff_out_0_array = None
+    ff_in_1_array = None; ff_out_1_array = None
+    ff_in_2_array = None; ff_out_2_array = None
+    ff_in_3_array = None; ff_out_3_array = None
+    ff_in_4_array = None; ff_out_4_array = None
+    ff_in_5_array = None; ff_out_5_array = None
+
+    for i in range(N_inputs):
+        ff_in_0 = FF_list[i]['ff_0']['ff_in']
+        ff_out_0 = FF_list[i]['ff_0']['ff_out']
+        ff_in_1 = FF_list[i]['ff_1']['ff_in']
+        ff_out_1 = FF_list[i]['ff_1']['ff_out']
+        ff_in_2 = FF_list[i]['ff_2']['ff_in']
+        ff_out_2 = FF_list[i]['ff_2']['ff_out']
+        ff_in_3 = FF_list[i]['ff_3']['ff_in']
+        ff_out_3 = FF_list[i]['ff_3']['ff_out']
+        ff_in_4 = FF_list[i]['ff_4']['ff_in']
+        ff_out_4 = FF_list[i]['ff_4']['ff_out']
+        ff_in_5 = FF_list[i]['ff_5']['ff_in']
+        ff_out_5 = FF_list[i]['ff_5']['ff_out']
+
+        if ff_in_0_array is None:
+            ff_in_0_array = ff_in_0
+            ff_out_0_array = ff_out_0
+        else:
+            ff_in_0_array = np.vstack((ff_in_0_array, ff_in_0))
+            ff_out_0_array = np.vstack((ff_out_0_array, ff_out_0))
+
+        if ff_in_1_array is None:
+            ff_in_1_array = ff_in_1
+            ff_out_1_array = ff_out_1
+        else:
+            ff_in_1_array = np.vstack((ff_in_1_array, ff_in_1))
+            ff_out_1_array = np.vstack((ff_out_1_array, ff_out_1))
+
+        if ff_in_2_array is None:
+            ff_in_2_array = ff_in_2
+            ff_out_2_array = ff_out_2
+        else:
+            ff_in_2_array = np.vstack((ff_in_2_array, ff_in_2))
+            ff_out_2_array = np.vstack((ff_out_2_array, ff_out_2))
+
+        if ff_in_3_array is None:
+            ff_in_3_array = ff_in_3
+            ff_out_3_array = ff_out_3
+        else:
+            ff_in_3_array = np.vstack((ff_in_3_array, ff_in_3))
+            ff_out_3_array = np.vstack((ff_out_3_array, ff_out_3))
+
+        if ff_in_4_array is None:
+            ff_in_4_array = ff_in_4
+            ff_out_4_array = ff_out_4
+        else:
+            ff_in_4_array = np.vstack((ff_in_4_array, ff_in_4))
+            ff_out_4_array = np.vstack((ff_out_4_array, ff_out_4))
+
+        if ff_in_5_array is None:
+            ff_in_5_array = ff_in_5
+            ff_out_5_array = ff_out_5
+        else:
+            ff_in_5_array = np.vstack((ff_in_5_array, ff_in_5))
+            ff_out_5_array = np.vstack((ff_out_5_array, ff_out_5))
+
+    ff_dict = { 'ff_0': {"ff_in": ff_in_0_array, "ff_out": ff_out_0_array},
+                'ff_1': {"ff_in": ff_in_1_array, "ff_out": ff_out_1_array},
+                'ff_2': {"ff_in": ff_in_2_array, "ff_out": ff_out_2_array},
+                'ff_3': {"ff_in": ff_in_3_array, "ff_out": ff_out_3_array},
+                'ff_4': {"ff_in": ff_in_4_array, "ff_out": ff_out_4_array},
+                'ff_5': {"ff_in": ff_in_5_array, "ff_out": ff_out_5_array}}
+
+    return ff_dict 

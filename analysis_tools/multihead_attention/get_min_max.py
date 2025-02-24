@@ -2,22 +2,22 @@
 
 import numpy as np
 
-def get_min_max_QKV_matrix(QKV_list, epochs_to_analyze, N_attention_layers):
+def get_min_max_QKV_matrix(QKV_list, epochs_to_analyze, N_attention_layers, dict_key_suffix : str):
     # Initialization to extreme values
     min_val = 1e9
     max_val = -1e9
 
     for epoch in range(len(epochs_to_analyze)):
         for atten_layer in range(N_attention_layers):
-            list_vals = np.array(QKV_list[epoch][f'attention_{atten_layer}']['query'])
+            list_vals = np.array(QKV_list[epoch][f'attention_{atten_layer}'][f'query_{dict_key_suffix}'])
             min_val = min(min_val, np.min(list_vals))
             max_val = max(max_val, np.max(list_vals))
 
-            list_vals = np.array(QKV_list[epoch][f'attention_{atten_layer}']['key'])
+            list_vals = np.array(QKV_list[epoch][f'attention_{atten_layer}'][f'key_{dict_key_suffix}'])
             min_val = min(min_val, np.min(list_vals))
             max_val = max(max_val, np.max(list_vals))
 
-            list_vals = np.array(QKV_list[epoch][f'attention_{atten_layer}']['value'])
+            list_vals = np.array(QKV_list[epoch][f'attention_{atten_layer}'][f'value_{dict_key_suffix}'])
             min_val = min(min_val, np.min(list_vals))
             max_val = max(max_val, np.max(list_vals))
 

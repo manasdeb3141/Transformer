@@ -57,30 +57,43 @@ class PdfEstimator:
     def __sklearn_fit_data(self, samples : np.ndarray) -> None:
         # Create a KernelDensity estimator
         kde = KernelDensity()
+        N_tries = 4
 
-        # Define the parameter grid to search
-        param_grid = {
-            'bandwidth': np.linspace(0.005, 0.5, 100),
-            'kernel': ['gaussian']
-            # 'kernel': ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine']
-        }
+        # Initial settings for bandwidth limits
+        min_bw = 0.005
+        max_bw = 1
 
-        # Create a GridSearchCV object
-        grid = GridSearchCV(kde, param_grid, cv=5, n_jobs=-1)
+        for try_idx in range(N_tries):
+            # Define the parameter grid to search
+            param_grid = {
+                'bandwidth': np.linspace(min_bw, max_bw, 200),
+                'kernel': ['gaussian']
+                # 'kernel': ['gaussian', 'tophat', 'epanechnikov', 'exponential', 'linear', 'cosine']
+            }
 
-        # Fit the GridSearchCV object to the probability distribution samples
-        grid.fit(samples)
+            # Create a GridSearchCV object
+            grid = GridSearchCV(kde, param_grid, cv=5, n_jobs=-1)
 
-        # Best bandwidth and Kernel Density Estimator
-        best_params = grid.best_params_
-        self._kde = grid.best_estimator_
+            # Fit the GridSearchCV object to the probability distribution samples
+            grid.fit(samples)
 
-        if (best_params['bandwidth'] == 0.005) or (best_params['bandwidth'] == 0.5):
+            # Best bandwidth and Kernel Density Estimator
+            best_params = grid.best_params_
+            self._kde = grid.best_estimator_
+
+            if (best_params['bandwidth'] == min_bw):
+                min_bw, max_bw = min_bw / (10 ** (try_idx+1)), min_bw+1e-6
+            elif (best_params['bandwidth'] == max_bw):
+                min_bw, max_bw = max_bw-1e-6, max_bw * (2 ** (try_idx+1))
+            else:
+                return
+
+        if (best_params['bandwidth'] == min_bw) or (best_params['bandwidth'] == max_bw):
             print("KDE best params:")
             print(best_params) 
-            print(f"WARNING: bandwidth = {best_params['bandwidth']} is at the limit")
+            print(f"ERROR: bandwidth = {best_params['bandwidth']} is at the limit after {try_idx} tries")
+            raise ValueError("KDE bandwidth is at the limit")
 
-        # assert((best_params['bandwidth'] > 0.01) and (best_params['bandwidth'] < 1.0))
 
     def __sklearn_pdf(self, pdf_points : np.ndarray) -> np.ndarray:
         # Use the best estimator to make predictions

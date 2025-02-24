@@ -155,9 +155,18 @@ class MutualInfoEstimator:
         # Mutual Information
         MI = H_X + H_Y - H_XY
 
-        # Saturate the mutual information to zero if it is negative
+        # Lower bound the mutual information and entropies to zero if it is negative
         if MI < 0:
             MI = 0
+
+        if H_X < 0:
+            H_X = 0
+
+        if H_Y < 0:
+            H_Y = 0
+
+        if H_XY < 0:
+            H_XY = 0
 
         # Create a dictionary for returning the group of values
         MI_data = dict()
@@ -192,6 +201,15 @@ class MutualInfoEstimator:
         # Saturate the mutual information to zero if it is negative
         if MI < 0:
             MI = 0
+
+        if H_X < 0:
+            H_X = 0
+
+        if H_Y < 0:
+            H_Y = 0
+
+        if H_XY < 0:
+            H_XY = 0
 
         # Create a dictionary for returning the group of values
         MI_data = dict()

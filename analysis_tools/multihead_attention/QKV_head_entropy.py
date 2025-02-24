@@ -1,6 +1,6 @@
 
 
-from QKV_entropy import compute_entropy
+from QKV_entropy import compute_entropy_mi
 
 def compute_QKV_head_entropy(QKV_dict : dict, N_attention_layers : int) -> dict:
     # This will contain the entropy values for the query, key and value arrays
@@ -31,7 +31,7 @@ def compute_QKV_head_entropy(QKV_dict : dict, N_attention_layers : int) -> dict:
             key_head = key[j]
             value_head = value[j]
 
-            entropy_dict = compute_entropy(query_head, key_head, value_head, N_dimensions)
+            entropy_dict = compute_entropy_mi(query_head, key_head, value_head, N_dimensions)
 
             # The dictionary contains the list of entropy values for the query, key and value 
             # attention head arrays across all dimensions

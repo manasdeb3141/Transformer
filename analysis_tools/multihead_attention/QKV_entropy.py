@@ -7,9 +7,11 @@ from mutual_info_estimator import MutualInfoEstimator
 from tqdm import tqdm
 
 
-def compute_entropy(query, key, value, N_dimensions) -> dict:
+def compute_entropy_mi(x, query, key, value, N_dimensions) -> dict:
     # Instantiate the Mutual Information Estimator object
     MI_estimator = MutualInfoEstimator()
+
+    kernel_MI = True
 
     # These will contain entropy for the query, key and value arrays
     # for each attention layer
@@ -17,35 +19,64 @@ def compute_entropy(query, key, value, N_dimensions) -> dict:
     K_entropy_list = list()
     V_entropy_list = list()
 
+    Q_mi_list = list()
+    K_mi_list = list()
+    V_mi_list = list()
+
     for n in tqdm(range(N_dimensions)):
+        # Query
+        X = x[:, n]
         Y = query[:, n]
-        MI_estimator.set_inputs(Y, Y)
-        H = MI_estimator.kraskov_entropy()
-        #prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
-        #H = mi_dict["H_X"]
+        MI_estimator.set_inputs(X, Y)
+
+        if kernel_MI:
+            prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        else:
+            mi_dict = MI_estimator.kraskov_MI()
+
+        H = mi_dict["H_Y"]
         Q_entropy_list.append(H)
+        MI = mi_dict["MI"]
+        Q_mi_list.append(MI)
 
+        # Key
+        X = x[:, n]
         Y = key[:, n]
-        MI_estimator.set_inputs(Y, Y)
-        H = MI_estimator.kraskov_entropy()
-        #prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
-        #H = mi_dict["H_X"]
+        MI_estimator.set_inputs(X, Y)
+
+        if kernel_MI:
+            prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        else:
+            mi_dict = MI_estimator.kraskov_MI()
+
+        H = mi_dict["H_Y"]
         K_entropy_list.append(H)
+        MI = mi_dict["MI"]
+        K_mi_list.append(MI)
 
+        # Value
+        X = x[:, n]
         Y = value[:, n]
-        MI_estimator.set_inputs(Y, Y)
-        H = MI_estimator.kraskov_entropy()
-        #prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
-        #H = mi_dict["H_X"]
+        MI_estimator.set_inputs(X, Y)
+
+        if kernel_MI:
+            prob_dict, mi_dict = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        else:
+            mi_dict = MI_estimator.kraskov_MI()
+
+        H = mi_dict["H_Y"]
         V_entropy_list.append(H)
+        MI = mi_dict["MI"]
+        V_mi_list.append(MI)
 
-    entropy_dict = dict(Q_entropy_list=Q_entropy_list, K_entropy_list=K_entropy_list, V_entropy_list=V_entropy_list)
+    entropy_mi_dict = dict(Q_entropy_list=Q_entropy_list, K_entropy_list=K_entropy_list, V_entropy_list=V_entropy_list,
+                        Q_mi_list=Q_mi_list, K_mi_list=K_mi_list, V_mi_list=V_mi_list)
 
-    return entropy_dict
+    return entropy_mi_dict
 
-def compute_QKV_matrix_entropy(QKV_dict : dict) -> dict:
+def compute_QKV_matrix_entropy_mi(QKV_dict : dict) -> dict:
     # This will contain the entropy values for the query, key and value arrays
-    QKV_entropy_dict = dict()
+    QKV_entropy_mi_dict = dict()
 
     # Get the dimensions of the model from the number
     # of columns of the query array
@@ -61,12 +92,16 @@ def compute_QKV_matrix_entropy(QKV_dict : dict) -> dict:
         key = QKV_dict[f'attention_{i}']["key"]
         value = QKV_dict[f'attention_{i}']["value"]
 
-        entropy_dict = compute_entropy(query, key, value, N_dimensions)
+        entropy_dict = compute_entropy_mi(x, query, key, value, N_dimensions)
 
         Q_entropy_list = entropy_dict["Q_entropy_list"]
         K_entropy_list = entropy_dict["K_entropy_list"]
         V_entropy_list = entropy_dict["V_entropy_list"]
+        Q_mi_list = entropy_dict["Q_mi_list"]
+        K_mi_list = entropy_dict["K_mi_list"]
+        V_mi_list = entropy_dict["V_mi_list"]
 
-        QKV_entropy_dict[f'attention_{i}'] = {"query": Q_entropy_list, "key": K_entropy_list, "value": V_entropy_list}
+        QKV_entropy_mi_dict[f'attention_{i}'] = {"query_entropy": Q_entropy_list, "key_entropy": K_entropy_list, "value_entropy": V_entropy_list,
+                                              "query_mi": Q_mi_list, "key_mi": K_mi_list, "value_mi": V_mi_list}
 
-    return QKV_entropy_dict
+    return QKV_entropy_mi_dict

@@ -21,7 +21,7 @@ from TransformerAnalyzer import TransformerAnalyzer
 # Functions implemented by this application
 from get_sentence_tokens import get_sentence_tokens
 from get_QKV import get_query_key_value_head
-from stack_QKV import stack_QKV_matrix
+from stack_matrices import stack_QKV_matrix
 from QKV_head_entropy import compute_QKV_head_entropy
 from QKV_head_mi import compute_QKV_head_mi
 from get_min_max import get_min_max_QKV_head

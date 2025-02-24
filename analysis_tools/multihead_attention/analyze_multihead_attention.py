@@ -22,6 +22,8 @@ from process_QKV_matrix import process_QKV_matrix
 from process_QKV_heads import process_QKV_heads
 from process_attention_scores import process_attention_scores
 from process_mi_attention_scores import process_mi_attention_scores
+from process_feed_forward import process_feed_forward
+from process_feed_forward import process_feed_forward_single_epoch
 
 
 def process_probes(test_id, analyzer):
@@ -44,6 +46,10 @@ def process_probes(test_id, analyzer):
         case 4:
             process_mi_attention_scores(analyzer)
 
+        case 5:
+            process_feed_forward(analyzer)
+            # process_feed_forward_single_epoch(analyzer)
+
         case _:
             print("Invalid test id")
             return
@@ -64,7 +70,7 @@ def main():
     model_config = cfg_obj.get_config()
 
     model_config["tokenizer_dir"] = "../../model_data/opus_books_en_fr/tokens"
-    model_config["analyze_dir"] = "../../model_data/opus_books_en_fr/probes_50"
+    model_config["analyze_dir"] = "../../model_data/opus_books_en_fr/probes_8"
 
     # Dictionary of probe file names
     probe_config = cfg_obj.get_probes()
