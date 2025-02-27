@@ -24,7 +24,6 @@ from get_sentence_tokens import get_sentence_tokens
 from get_FF import get_FF_input_output
 from stack_matrices import stack_FF_matrix
 from compute_matrix_pdf import compute_ff_pdf
-from get_min_max import get_min_max_QKV_matrix
 
 def plot_feed_forward_pdf_single_epoch(ff_pdf_list : list, attention_layer : int):
     
@@ -70,8 +69,8 @@ def process_feed_forward_single_epoch(analyzer : TransformerAnalyzer):
     print("Computing the entropy and mutual information between the input and output of the FF layer ...")
     ff_pdf_filename = 'data/ff_pdf_data.pt'
 
-    epoch_to_analyze = 0
-    attention_layer = 0
+    epoch_to_analyze = 19
+    attention_layer = 5
 
     ff_pdf_list = None
     ff_pdf_file = Path(ff_pdf_filename)

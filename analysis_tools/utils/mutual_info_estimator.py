@@ -191,11 +191,12 @@ class MutualInfoEstimator:
 
     def kraskov_MI(self) -> float:
         default_base=2
-        H_X = ee.entropy(self._X, k=3, base=default_base)
-        H_Y = ee.entropy(self._Y, k=3, base=default_base)
-        H_XY = ee.entropy(np.hstack([self._X, self._Y]), k=3, base=default_base)
-        # MI = ee.mi(self._X, self._Y, k=3, base=default_base, alpha=0.25)
-        MI = ee.mi(self._X, self._Y, k=3, base=default_base)
+        k=8
+        H_X = ee.entropy(self._X, k=k, base=default_base)
+        H_Y = ee.entropy(self._Y, k=k, base=default_base)
+        H_XY = ee.entropy(np.hstack([self._X, self._Y]), k=k, base=default_base)
+        # MI = ee.mi(self._X, self._Y, k=k, base=default_base, alpha=0.25)
+        MI = ee.mi(self._X, self._Y, k=k, base=default_base)
         MI_entropy = H_X + H_Y - H_XY
 
         # Saturate the mutual information to zero if it is negative

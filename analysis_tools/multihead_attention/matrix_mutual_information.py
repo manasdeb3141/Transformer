@@ -3,6 +3,7 @@ import sys
 sys.path.append('../utils')
 
 import numpy as np
+from tqdm import tqdm
 from mutual_info_estimator import MutualInfoEstimator
 
 def compute_matrix_mi(X : np.array, Y : np.array, N_rows : int) -> None:
@@ -18,7 +19,7 @@ def compute_matrix_mi(X : np.array, Y : np.array, N_rows : int) -> None:
     # Initialize the mutual information matrix
     MI_mat = np.zeros((N_rows, N_rows))
 
-    for i, j in ij_pos:
+    for i, j in tqdm(ij_pos):
         X_row = X[i]
         Y_row = Y[j]
 

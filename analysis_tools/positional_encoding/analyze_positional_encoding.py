@@ -74,13 +74,20 @@ def main():
         MI[x, y] = MI_data["MI"]
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(x_pos, y_pos, MI, cmap=plt.cm.jet)
+    ax = fig.add_subplot(2, 1, 1, projection='3d')
+    surf = ax.plot_surface(x_pos, y_pos, MI, vmin=0, vmax=5, cmap=plt.cm.jet)
     fig.colorbar(surf, ax=ax)
     ax.set_xlabel('Position')
     ax.set_ylabel('Position')
     ax.set_zlabel('MI')
-    ax.set_title('Mutual Information of Positional Encoding vectors (Seq length=100, d_model=512)')
+
+    ax = fig.add_subplot(2, 1, 2)
+    im = ax.imshow(MI, cmap=plt.cm.jet, origin='lower', vmin=0, vmax=5, extent=[0, MI.shape[0]-1, 0, MI.shape[1]-1])
+    ax.set_xlabel("Position")
+    ax.set_ylabel("Position")
+    ax.grid(True)
+    fig.colorbar(im, ax=ax)
+    fig.suptitle('Mutual Information between Positional Encoding vectors\n(Seq length=100, d_model=512)')
     plt.show()
 
     # Generate the position encodings for the sequence
@@ -95,14 +102,22 @@ def main():
         MI_data = MI_estimator.kraskov_MI()
         MI_rotary[x, y] = MI_data["MI"]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(x_pos, y_pos, MI_rotary, cmap=plt.cm.jet)
+
+
+    ax = fig.add_subplot(2, 1, 1, projection='3d')
+    surf = ax.plot_surface(x_pos, y_pos, MI, vmin=0, vmax=5, cmap=plt.cm.jet)
     fig.colorbar(surf, ax=ax)
     ax.set_xlabel('Position')
     ax.set_ylabel('Position')
     ax.set_zlabel('MI')
-    ax.set_title('Mutual Information of Rotary Positional Encoding vectors (Seq length=100, d_model=512)')
+
+    ax = fig.add_subplot(2, 1, 2)
+    im = ax.imshow(MI, cmap=plt.cm.jet, origin='lower', vmin=0, vmax=5, extent=[0, MI.shape[0]-1, 0, MI.shape[1]-1])
+    ax.set_xlabel("Position")
+    ax.set_ylabel("Position")
+    ax.grid(True)
+    fig.colorbar(im, ax=ax)
+    fig.suptitle('Mutual Information between Rotary Positional Encoding vectors\n(Seq length=100, d_model=512)')
     plt.show()
 
 

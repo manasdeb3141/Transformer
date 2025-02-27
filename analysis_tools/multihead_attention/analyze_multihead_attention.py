@@ -19,6 +19,7 @@ from TransformerAnalyzer import TransformerAnalyzer
 
 # Functions implemented by this application
 from process_QKV_matrix import process_QKV_matrix
+from process_QKV_capacity import process_QKV_capacity
 from process_QKV_heads import process_QKV_heads
 from process_attention_scores import process_attention_scores
 from process_mi_attention_scores import process_mi_attention_scores
@@ -49,6 +50,9 @@ def process_probes(test_id, analyzer):
         case 5:
             process_feed_forward(analyzer)
             # process_feed_forward_single_epoch(analyzer)
+
+        case 6:
+            process_QKV_capacity(analyzer)
 
         case _:
             print("Invalid test id")

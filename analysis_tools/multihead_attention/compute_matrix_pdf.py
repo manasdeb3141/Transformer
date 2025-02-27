@@ -66,8 +66,8 @@ def compute_ff_pdf(ff_stacked_dict : dict, attention_layer : int):
         
             # Instantiate the Mutual Information Estimator object
             MI_estimator = MutualInfoEstimator(X, Y)
-            MI_data = MI_estimator.kernel_MI(KDE_module='sklearn')
-            MI_data_list.append(MI_data)
+            prob_MI_tuple = MI_estimator.kernel_MI(KDE_module='sklearn')
+            MI_data_list.append(prob_MI_tuple)
 
 
     return MI_data_list
