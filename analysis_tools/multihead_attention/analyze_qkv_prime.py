@@ -146,7 +146,7 @@ def main():
     #model_config["model_dir"] = "../../model_data_d32/opus_books_en_fr/weights"
 
     epoch = 19
-    attention_layer = 1
+    attention_layer = 2
     analyze_sentence = 3
 
     # Dictionary of probe file names

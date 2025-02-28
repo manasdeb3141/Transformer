@@ -90,7 +90,7 @@ def compute_joint_pdf(x, query, key, value) -> dict:
     return dict(Wq_joint_pdf=q_prob_dict, Wk_joint_pdf=k_prob_dict, Wv_joint_pdf=v_prob_dict), \
             dict(x_q_mi=q_mi_dict, x_k_mi=k_mi_dict, x_v_mi=v_mi_dict)
 
-def compute_QKV_joint_pdf(QKV_stacked_dict : dict, attention_layer : int) -> dict:
+def compute_QKV_joint_pdf(QKV_stacked_dict : dict, attention_layer : int, N_tokens : int) -> dict:
     # This will contain the joint pdf for the query, key and value arrays
     QKV_joint_pdf_dict = dict()
 
@@ -113,20 +113,40 @@ def compute_QKV_joint_pdf(QKV_stacked_dict : dict, attention_layer : int) -> dic
     x_k_mi = mi_dict["x_k_mi"]
     x_v_mi = mi_dict["x_v_mi"] 
 
-    x_entropy_dict = compute_x_entropy(x, query, key, value, N_dimensions)
-    x_entropy_list = x_entropy_dict["x_entropy_list"]
-    q_entropy_list = x_entropy_dict["q_entropy_list"]
-    k_entropy_list = x_entropy_dict["k_entropy_list"]
-    v_entropy_list = x_entropy_dict["v_entropy_list"]
-    xq_entropy_list = x_entropy_dict["xq_entropy_list"]
-    xk_entropy_list = x_entropy_dict["xk_entropy_list"]
-    xv_entropy_list = x_entropy_dict["xv_entropy_list"]
+    compute_entropy = True
+    x_token_entropy_list = list()
+    q_token_entropy_list = list()
+    k_token_entropy_list = list()
+    v_token_entropy_list = list()
+    xq_token_entropy_list = list()
+    xk_token_entropy_list = list()
+    xv_token_entropy_list = list()
+    if compute_entropy:
+        for _ in range(N_tokens):
+            x_entropy_dict = compute_x_entropy(x, query, key, value, N_dimensions)
+            x_entropy_list = x_entropy_dict["x_entropy_list"]
+            q_entropy_list = x_entropy_dict["q_entropy_list"]
+            k_entropy_list = x_entropy_dict["k_entropy_list"]
+            v_entropy_list = x_entropy_dict["v_entropy_list"]
+            xq_entropy_list = x_entropy_dict["xq_entropy_list"]
+            xk_entropy_list = x_entropy_dict["xk_entropy_list"]
+            xv_entropy_list = x_entropy_dict["xv_entropy_list"]
+
+            x_token_entropy_list.append(x_entropy_list)
+            q_token_entropy_list.append(q_entropy_list)
+            k_token_entropy_list.append(k_entropy_list)
+            v_token_entropy_list.append(v_entropy_list)
+            xq_token_entropy_list.append(xq_entropy_list)
+            xk_token_entropy_list.append(xk_entropy_list)
+            xv_token_entropy_list.append(xv_entropy_list)
+    else:
+        x_token_entropy_list = q_token_entropy_list = k_token_entropy_list = v_token_entropy_list = xq_token_entropy_list = xk_token_entropy_list = xv_token_entropy_list = list()
 
     QKV_joint_pdf_dict[f'attention_{attention_layer}'] = \
         {"Wq_joint_pdf": Wq_joint_pdf, "Wk_joint_pdf": Wk_joint_pdf, "Wv_joint_pdf": Wv_joint_pdf, 
          "x_q_mi": x_q_mi, "x_k_mi": x_k_mi, "x_v_mi": x_v_mi,
-         "x_entropy_list": x_entropy_list, "q_entropy_list": q_entropy_list, "k_entropy_list": k_entropy_list,
-         "v_entropy_list": v_entropy_list, "xq_entropy_list": xq_entropy_list, "xk_entropy_list": xk_entropy_list,
-         "xv_entropy_list": xv_entropy_list}
+         "x_entropy_list": x_token_entropy_list, "q_entropy_list": q_token_entropy_list, "k_entropy_list": k_token_entropy_list,
+         "v_entropy_list": v_token_entropy_list, "xq_entropy_list": xq_token_entropy_list, "xk_entropy_list": xk_token_entropy_list,
+         "xv_entropy_list": xv_token_entropy_list}
                                        
     return QKV_joint_pdf_dict

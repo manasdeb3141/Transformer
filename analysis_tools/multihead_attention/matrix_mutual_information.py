@@ -26,10 +26,13 @@ def compute_matrix_mi(X : np.array, Y : np.array, N_rows : int) -> None:
         MI_estimator.set_inputs(X_row, Y_row)
         # MI_data = self._MI_estimator.kraskov_MI()
         # MI_mat[i, j] = MI_data["MI"]
-        MI, _ = MI_estimator.MINE_MI()
+        _, MI_data = MI_estimator.kernel_MI(KDE_module='sklearn', N_points=max(100, len(Y)))
+        MI=MI_data["MI"]
+        # MI, _ = MI_estimator.MINE_MI()
         MI_mat[i, j] = MI
 
-    return MI_mat, i_pos, j_pos
+
+    return dict(MI=MI_mat, i_pos=i_pos, j_pos=j_pos)
 
 
 def compute_matrix_mi_symmetric(X : np.array, Y : np.array, N_rows : int) -> None:

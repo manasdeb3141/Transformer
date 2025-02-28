@@ -19,7 +19,11 @@ def plot_mi_attention_scores(MI_mat, input_words, attention_scores, plot_title) 
     fig, axs = plt.subplots(1, 2)
 
     # im0 = axs[0].imshow(MI, cmap=plt.cm.jet, origin='lower')
-    im0 = axs[0].imshow(MI_mat, cmap=plt.cm.jet)
+    # im0 = axs[0].imshow(MI_mat, cmap=plt.cm.jet)
+    im0 = axs[0].imshow(MI_mat, cmap=plt.cm.Wistia)
+    for i in range(MI_mat.shape[0]):
+        for j in range(MI_mat.shape[1]):
+            text = axs[0].text(j, i, f"{MI_mat[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
     axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=45)
     axs[0].set_yticks(range(0, len(input_words)), input_words, rotation=45)
     axs[0].set_aspect('auto')
@@ -51,8 +55,8 @@ def plot_mi_attention_scores(MI_mat, input_words, attention_scores, plot_title) 
 
 def process_mi_attention_scores(analyzer : TransformerAnalyzer):
     head = 0
-    sentence_id = 0
-    epoch = 0
+    sentence_id = 3
+    epoch = 19
     attention_layer = 0
 
     print("Computing the mutual information and attention scores with the following parameters:")
@@ -77,7 +81,7 @@ def process_mi_attention_scores(analyzer : TransformerAnalyzer):
     for token in src_sentence_tokens:
         input_words.append(analyzer.get_src_word_from_token(token))
 
-    attention_scores = get_attention_scores(sentence_id, N_src_tokens, attention_layer)
+    attention_scores = get_attention_scores(analyzer, sentence_id, N_src_tokens, attention_layer)
 
     plot_title = f"Encoder attention layer {attention_layer}, head {head}, epoch {epoch}"
     plot_mi_attention_scores(MI_mat, input_words, attention_scores[attention_layer], plot_title)
