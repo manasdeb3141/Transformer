@@ -143,33 +143,33 @@ class TransformerProbe:
         self._encoder_probe = ProbeManager(N_inputs)                # Encoder block's input and output probe
 
         # Decoder probe objects
-        self._dec_embedding_probe = ProbeManager(N_inputs)          # Decoder's embedding layer probe
+        self._dec_embedding_probe = ProbeManager(N_inputs, True)        # Decoder's embedding layer probe
 
-        self._dec_0_attn_probe = ProbeManager(N_inputs)             # Decoder 0 attention layer probe
-        self._dec_0_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 0 cross-attention layer probe
-        self._dec_0_feedforward_probe = ProbeManager(N_inputs)      # Decoder 0 feedforward layer probe
+        self._dec_0_attn_probe = ProbeManager(N_inputs, True)           # Decoder 0 attention layer probe
+        self._dec_0_cross_attn_probe = ProbeManager(N_inputs, True)     # Decoder 0 cross-attention layer probe
+        self._dec_0_feedforward_probe = ProbeManager(N_inputs, True)    # Decoder 0 feedforward layer probe
 
-        self._dec_1_attn_probe = ProbeManager(N_inputs)             # Decoder 1 attention layer probe
-        self._dec_1_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 1 cross-attention layer probe
-        self._dec_1_feedforward_probe = ProbeManager(N_inputs)      # Decoder 1 feedforward layer probe
+        self._dec_1_attn_probe = ProbeManager(N_inputs, True)           # Decoder 1 attention layer probe
+        self._dec_1_cross_attn_probe = ProbeManager(N_inputs, True)     # Decoder 1 cross-attention layer probe
+        self._dec_1_feedforward_probe = ProbeManager(N_inputs, True)    # Decoder 1 feedforward layer probe
 
-        self._dec_2_attn_probe = ProbeManager(N_inputs)             # Decoder 2 attention layer probe
-        self._dec_2_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 2 cross-attention layer probe
-        self._dec_2_feedforward_probe = ProbeManager(N_inputs)      # Decoder 2 feedforward layer probe
+        self._dec_2_attn_probe = ProbeManager(N_inputs, True)           # Decoder 2 attention layer probe
+        self._dec_2_cross_attn_probe = ProbeManager(N_inputs, True)     # Decoder 2 cross-attention layer probe
+        self._dec_2_feedforward_probe = ProbeManager(N_inputs, True)    # Decoder 2 feedforward layer probe
 
-        self._dec_3_attn_probe = ProbeManager(N_inputs)             # Decoder 3 attention layer probe
-        self._dec_3_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 3 cross-attention layer probe
-        self._dec_3_feedforward_probe = ProbeManager(N_inputs)      # Decoder 3 feedforward layer probe
+        self._dec_3_attn_probe = ProbeManager(N_inputs, True)           # Decoder 3 attention layer probe
+        self._dec_3_cross_attn_probe = ProbeManager(N_inputs, True)     # Decoder 3 cross-attention layer probe
+        self._dec_3_feedforward_probe = ProbeManager(N_inputs, True)    # Decoder 3 feedforward layer probe
 
-        self._dec_4_attn_probe = ProbeManager(N_inputs)             # Decoder 4 attention layer probe
-        self._dec_4_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 4 cross-attention layer probe
-        self._dec_4_feedforward_probe = ProbeManager(N_inputs)      # Decoder 4 feedforward layer probe
+        self._dec_4_attn_probe = ProbeManager(N_inputs, True)           # Decoder 4 attention layer probe
+        self._dec_4_cross_attn_probe = ProbeManager(N_inputs, True)     # Decoder 4 cross-attention layer probe
+        self._dec_4_feedforward_probe = ProbeManager(N_inputs, True)    # Decoder 4 feedforward layer probe
 
-        self._dec_5_attn_probe = ProbeManager(N_inputs)             # Decoder 5 attention layer probe
-        self._dec_5_cross_attn_probe = ProbeManager(N_inputs)       # Decoder 5 cross-attention layer probe
-        self._dec_5_feedforward_probe = ProbeManager(N_inputs)      # Decoder 5 feedforward layer probe
+        self._dec_5_attn_probe = ProbeManager(N_inputs, True)           # Decoder 5 attention layer probe
+        self._dec_5_cross_attn_probe = ProbeManager(N_inputs, True)     # Decoder 5 cross-attention layer probe
+        self._dec_5_feedforward_probe = ProbeManager(N_inputs, True)    # Decoder 5 feedforward layer probe
 
-        self._decoder_probe = ProbeManager(N_inputs)                # Decoder block's input and output probe
+        self._decoder_probe = ProbeManager(N_inputs, True)              # Decoder block's input and output probe
 
         # Projection layer probe object 
         # (special probe to collect multiple inputs/outputs for each test input)
@@ -1063,7 +1063,7 @@ class TransformerProbe:
         in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the embedding layer probe in memory
-        self._dec_embedding_probe.add_probe(self._input_count, in_val, out_val)
+        self._dec_embedding_probe.collect_probe(self._input_count, in_val, out_val)
 
 
     def dec0_attention_hook(self, module, input, output) -> None:
@@ -1078,7 +1078,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_0_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_0_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
 
         
     def dec0_cross_attention_hook(self, module, input, output) -> None:
@@ -1093,7 +1093,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_0_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_0_cross_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
         
 
     def dec0_feedforward_hook(self, module, input, output) -> None:
@@ -1105,7 +1105,7 @@ class TransformerProbe:
         in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
-        self._dec_0_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        self._dec_0_feedforward_probe.collect_probe(self._input_count, in_val, out_val)
         
 
     def dec1_attention_hook(self, module, input, output) -> None:
@@ -1120,7 +1120,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_1_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_1_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
 
         
     def dec1_cross_attention_hook(self, module, input, output) -> None:
@@ -1135,7 +1135,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_1_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_1_cross_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
         
     def dec1_feedforward_hook(self, module, input, output) -> None:
         # input[0].shape = (1, x, d_model) => (1, x, 512)
@@ -1146,7 +1146,7 @@ class TransformerProbe:
         in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
-        self._dec_1_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        self._dec_1_feedforward_probe.collect_probe(self._input_count, in_val, out_val)
         
 
     def dec2_attention_hook(self, module, input, output) -> None:
@@ -1161,7 +1161,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_2_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_2_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
 
         
     def dec2_cross_attention_hook(self, module, input, output) -> None:
@@ -1176,7 +1176,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_2_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_2_cross_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
         
 
     def dec2_feedforward_hook(self, module, input, output) -> None:
@@ -1188,7 +1188,7 @@ class TransformerProbe:
         in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
-        self._dec_2_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        self._dec_2_feedforward_probe.collect_probe(self._input_count, in_val, out_val)
         
 
     def dec3_attention_hook(self, module, input, output) -> None:
@@ -1203,7 +1203,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_3_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_3_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
 
         
     def dec3_cross_attention_hook(self, module, input, output) -> None:
@@ -1218,7 +1218,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_3_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_3_cross_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
         
 
     def dec3_feedforward_hook(self, module, input, output) -> None:
@@ -1230,7 +1230,7 @@ class TransformerProbe:
         in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
-        self._dec_3_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        self._dec_3_feedforward_probe.collect_probe(self._input_count, in_val, out_val)
         
 
     def dec4_attention_hook(self, module, input, output) -> None:
@@ -1245,7 +1245,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_4_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_4_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
 
         
     def dec4_cross_attention_hook(self, module, input, output) -> None:
@@ -1260,7 +1260,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_4_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_4_cross_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
         
     def dec4_feedforward_hook(self, module, input, output) -> None:
         # input[0].shape = (1, x, d_model) => (1, x, 512)
@@ -1271,7 +1271,7 @@ class TransformerProbe:
         in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
-        self._dec_4_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        self._dec_4_feedforward_probe.collect_probe(self._input_count, in_val, out_val)
         
 
     def dec5_attention_hook(self, module, input, output) -> None:
@@ -1286,7 +1286,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_5_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_5_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
         
 
     def dec5_cross_attention_hook(self, module, input, output) -> None:
@@ -1301,7 +1301,7 @@ class TransformerProbe:
         attn_head_in, attn_head_out = self.__process_attention_hook(module, input, output)
 
         # Store the multi-attention head probe in memory
-        self._dec_5_cross_attn_probe.add_probe(self._input_count, attn_head_in, attn_head_out)
+        self._dec_5_cross_attn_probe.collect_probe(self._input_count, attn_head_in, attn_head_out)
 
         
     def dec5_feedforward_hook(self, module, input, output) -> None:
@@ -1313,7 +1313,7 @@ class TransformerProbe:
         in_val, out_val = self.__extract_input_output(input, output)
 
         # Store the feedforward layer probe in memory
-        self._dec_5_feedforward_probe.add_probe(self._input_count, in_val, out_val)
+        self._dec_5_feedforward_probe.collect_probe(self._input_count, in_val, out_val)
         
 
     def decoder_hook(self, module, input, output) -> None:
@@ -1334,7 +1334,7 @@ class TransformerProbe:
         decoder_out = output.detach().cpu().numpy()    
 
         # Store the decoder block's input and output probes in memory
-        self._decoder_probe.add_probe(self._input_count, decoder_in, decoder_out)
+        self._decoder_probe.collect_probe(self._input_count, decoder_in, decoder_out)
 
 
     def projection_hook(self, module, input, output) -> None:
