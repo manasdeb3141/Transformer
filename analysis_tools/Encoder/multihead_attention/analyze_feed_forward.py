@@ -110,7 +110,7 @@ def main():
         # Get the tokens of the source and target sentences
         N_src_tokens, src_sentence_tokens, N_tgt_tokens, tgt_sentence_tokens = get_sentence_tokens(analyzer, sentence_id)
 
-        # Get the query, key, value arrays for all the attention layers of this input sentence
+        # Get the FF input and output arrays for all the attention layers of this input sentence
         FF_inout = get_FF_input_output(analyzer, sentence_id, N_src_tokens)
         FF_mi = compute_FF_mi(analyzer, FF_inout, encoder_layer, src_sentence_tokens)
 
