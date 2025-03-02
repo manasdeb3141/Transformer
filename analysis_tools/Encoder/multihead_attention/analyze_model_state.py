@@ -1,7 +1,7 @@
 
 import sys
-sys.path.append('../..')
-sys.path.append('../utils')
+sys.path.append('../../..')
+sys.path.append('../../..utils')
 import os
 
 import torch
@@ -248,9 +248,9 @@ def main():
     cfg_obj = LangModelConfig()
     model_config = cfg_obj.get_config()
 
-    model_config["tokenizer_dir"] = "../../model_data/opus_books_en_fr/tokens"
-    model_config["model_dir"] = "../../model_data/opus_books_en_fr/weights"
-    model_config["analyze_dir"] = "../../model_data/opus_books_en_fr/probes_8"
+    model_config["tokenizer_dir"] = "../../../model_data/opus_books_en_fr/tokens"
+    model_config["model_dir"] = "../../../model_data/opus_books_en_fr/weights"
+    model_config["analyze_dir"] = "../../../model_data/opus_books_en_fr/probes_8"
     #model_config["tokenizer_dir"] = "../../model_data_d32/opus_books_en_fr/tokens"
     #model_config["model_dir"] = "../../model_data_d32/opus_books_en_fr/weights"
 

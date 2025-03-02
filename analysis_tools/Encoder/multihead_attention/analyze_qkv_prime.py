@@ -66,6 +66,52 @@ def  plot_JSD_estimate(JSD_stats, epoch_list, attention_layer):
     plt.subplots_adjust(hspace=0.5)
     plt.show(block=True)
 
+def plot_JSD_bars(QKV_dict, word_list):
+    query_JSD_estimate = QKV_dict["query_JSD_estimate"]
+    key_JSD_estimate = QKV_dict["key_JSD_estimate"]
+    value_JSD_estimate = QKV_dict["value_JSD_estimate"]
+    input_words = QKV_dict["input_words"]
+
+    np.fill_diagonal(query_JSD_estimate, 0)
+    np.fill_diagonal(key_JSD_estimate, 0)
+    np.fill_diagonal(value_JSD_estimate, 0)
+
+    for word in word_list:
+        word_index = input_words.index(word)
+        query_JSD = query_JSD_estimate[word_index]
+        key_JSD = key_JSD_estimate[word_index]
+        value_JSD = value_JSD_estimate[word_index]
+
+        fig, axs = plt.subplots(3,1)
+        x_vals = np.arange(0, len(input_words))
+
+        # Plot Q'
+        top_vals, N_top_indices = get_top_N_values(query_JSD, 3)
+        top_indices = np.argwhere(query_JSD >= min(top_vals)).squeeze().tolist()
+        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        barplot_Q = axs[0].bar(x_vals, query_JSD, color=bar_colors)
+        axs[0].set_title(f"Q'")
+        axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+
+        # Plot K'
+        top_vals, N_top_indices = get_top_N_values(key_JSD, 3)
+        top_indices = np.argwhere(key_JSD >= min(top_vals)).squeeze().tolist()
+        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        barplot_K = axs[1].bar(x_vals, key_JSD, color=bar_colors)
+        axs[1].set_title(f"K'")
+        axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+
+        # Plot V'
+        top_vals, N_top_indices = get_top_N_values(value_JSD, 3)
+        top_indices = np.argwhere(value_JSD >= min(top_vals)).squeeze().tolist()
+        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        barplot_V = axs[2].bar(x_vals, value_JSD, color=bar_colors)
+        axs[2].set_title(f"V'")
+        axs[2].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+
+        fig.suptitle(f"Jensen-Shannon divergence between the word '{word}' and other words")
+        plt.subplots_adjust(hspace=0.5)
+        plt.show(block=True)
 
 def plot_MI_bars(QKV_dict, word_list):
     query_MI_estimate = QKV_dict["query_MI_estimate"]
@@ -187,9 +233,11 @@ def get_JSD_stats(QKV_dict, attention_layers):
 # Main function of this script
 def main():
     epoch = 19
-    attention_layer_idx = 2
-    attention_layer = 0
+    attention_layer_list = [0, 1, 3, 5]
+    attention_layer = 5
     sentence_id = 3
+
+    attention_layer_idx = attention_layer_list.index(attention_layer)
 
     data_dir = Path("data/qkv_prime/model_data")
     if data_dir.exists() == False:
@@ -207,9 +255,9 @@ def main():
     # Plot the bar plots of the MI estimates for specific words
     word_list = ["dog", "car", "cat", "van"]
     plot_MI_bars(QKV_list[attention_layer_idx], word_list)
+    plot_JSD_bars(QKV_list[attention_layer_idx], word_list)
 
-    epochs_to_analyze = [0, 9, 19]
-    attention_layers = [0, 1, 5]
+    epochs_to_analyze = [0, 3, 6, 9, 10, 11, 14, 17, 19]
     JSD_stats_list = list()
 
     for epoch in epochs_to_analyze:

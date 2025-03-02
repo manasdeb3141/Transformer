@@ -891,7 +891,11 @@ class TransformerProbe:
 
             # Scores have the shape (1, h, seq_len, seq_len)
             # For this model it is (1, 8, 350, 350)
-            attention_scores = attention_scores.detach().cpu().numpy()
+            attention_scores = attention_scores.detach().cpu().numpy(),
+
+            # Has the following shape:
+            # (1, h, seq_len, d_k) => (1, 8, 350, 64)
+            scored_value = x.detach().cpu().numpy()
         )
 
         # Shape of the output is (1, seq_len, d_model) => (1, 350, 512)

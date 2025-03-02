@@ -1,6 +1,6 @@
 import sys
-sys.path.append('../..')
-sys.path.append('../utils')
+sys.path.append('../../..')
+sys.path.append('../../utils')
 
 import numpy as np
 import matplotlib.pyplot as plt
