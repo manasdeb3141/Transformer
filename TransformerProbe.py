@@ -24,7 +24,7 @@ from MultiheadAttention import MultiheadAttention
 from BilingualDataset import BilingualDataset
 from ProbeManager import ProbeManager
 
-special_dataset = [
+special_dataset_1 = [
     { 
         "id" : 1,
         "translation": 
@@ -91,6 +91,31 @@ special_dataset = [
         }
     }
 ]
+
+special_dataset_2 = [
+    { 
+        "id" : 1,
+        "translation": 
+        {
+            "en" : "The astronaut jumped on the moon",
+            "fr" : "L'astronaute a sauté sur la lune" 
+        }
+    },
+    { 
+        "id" : 2,
+        "translation": 
+        {
+            "en" : "The doctor jumped on the moon",
+            "fr" : "Le docteur a sauté sur la lune"
+        }
+    }
+]
+
+# The Transformer comes up with the following hallucination:
+# TRANSLATION : Les fenêtres du brise battaient sur la lune . 
+#
+# which means:
+#   The breeze windows were beating on the moon
     
 
 class TransformerProbe:
@@ -435,7 +460,15 @@ class TransformerProbe:
         log_dir = probe_dir / "runs"
         self._writer = SummaryWriter(log_dir)
 
-        if use_special_dataset == 1:
+        if use_special_dataset > 0:
+            match use_special_dataset:
+                case 1:
+                    special_dataset = special_dataset_1
+                case 2:
+                    special_dataset = special_dataset_2
+                case _:
+                    raise ValueError(f"Invalid special dataset number in the config.json: {use_special_dataset}")
+
             # Specially crafted dataset
             val_ds = BilingualDataset(special_dataset, self._tokenizer_src, self._tokenizer_src, lang_src, lang_tgt, self._seq_len)
             self._val_dataloader = DataLoader(val_ds, batch_size=1, shuffle=False)
@@ -564,7 +597,15 @@ class TransformerProbe:
         self.__hook_modules()
 
         # Create the Bilingual dataset from the raw dataset (batch size is 1 for the validation run)
-        if use_special_dataset == 1:
+        if use_special_dataset > 0:
+            match use_special_dataset:
+                case 1:
+                    special_dataset = special_dataset_1
+                case 2:
+                    special_dataset = special_dataset_2
+                case _:
+                    raise ValueError(f"Invalid special dataset number in the config.json: {use_special_dataset}")
+
             # Specially crafted dataset
             val_ds = BilingualDataset(special_dataset, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
         else:

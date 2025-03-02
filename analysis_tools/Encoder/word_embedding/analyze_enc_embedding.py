@@ -1,7 +1,7 @@
 
 import sys
-sys.path.append('../..')
-sys.path.append('../utils')
+sys.path.append('../../..')
+sys.path.append('../../utils')
 
 import torch
 import torch.nn as nn
@@ -62,7 +62,7 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
             Y = enc_embedding_output[y+offset]
             self._MI_estimator.set_inputs(X, Y)
             MI_data = self._MI_estimator.kraskov_MI()
-            # _, MI_data = self._MI_estimator.kernel_MI()
+            # _, MI_data = self._MI_estimator.kernel_MI(KDE_module='sklearn')
             MI[x, y] = MI_data["MI"]
 
         MI_dict = dict(input_words=input_words, x_pos=x_pos, y_pos=y_pos, MI=MI)
@@ -72,6 +72,7 @@ class EmbeddingLayerAnalyzer(TransformerAnalyzer) :
         print("Analyzing the Embedding Layer")
 
         epochs_to_analyze = [0, 4, 9, 14, 19]
+        epochs_to_analyze = [19]
 
         # Analyze the probes of each epoch of the encoder embedding layer
         for epoch in epochs_to_analyze:
@@ -137,8 +138,13 @@ def main():
     cfg_obj = LangModelConfig()
     model_config = cfg_obj.get_config()
 
-    model_config["tokenizer_dir"] = "../../model_data/opus_books_en_fr/tokens"
-    model_config["analyze_dir"] = "../../model_data/opus_books_en_fr/probes_8"
+    model_config["tokenizer_dir"] = "../../../model_data/opus_books_en_fr/tokens"
+    model_config["analyze_dir"] = "../../../model_data/opus_books_en_fr/probes_8"
+    model_config["d_model"] = 512
+
+    # model_config["tokenizer_dir"] = "../../../model_data_d32/opus_books_en_fr/tokens"
+    # model_config["analyze_dir"] = "../../../model_data_d32/opus_books_en_fr/probes_8"
+    # model_config["d_model"] = 32
 
     # Dictionary of probe file names
     probe_config = cfg_obj.get_probes()

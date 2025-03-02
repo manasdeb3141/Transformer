@@ -193,14 +193,22 @@ class ModelTrainer:
 
         if model_dir.exists():
             if preload_file == None:
+                user_input = input("Do you want to delete the existing training data folder? (y/n): ")
+                if user_input.lower() not in ["yes", "y"]:
+                    return
+
                 # If the previous weights are not to be loaded
                 # then remove the model directory since it contains
                 # the weights from a previous training session
                 shutil.rmtree(model_dir)
             else:
                 if self.__preload_model_weights(model_dir, preload_file) is not True:
+                    user_input = input("Unable to load the model weight.\nDo you want to delete the existing training data folder? (y/n): ")
+                    if user_input.lower() not in ["yes", "y"]:
+                        return
+
                     # Load of model weights failed. Print a message and delete the model directory if it exists
-                    print("Unable to find or load model weights. Training the model from scratch ...")
+                    print("Deleting the training data folder and training the model from scratch ...")
                     shutil.rmtree(model_dir)
 
         # If the model or dataset directories do not exist, then create it.

@@ -37,7 +37,7 @@ class PdfEstimator:
     def __statsmodel_fit_data(self, samples : np.ndarray) -> None:
         settings = sm.nonparametric.EstimatorSettings(n_jobs=-1)
         self._kde = sm.nonparametric.KDEMultivariate(data=samples, var_type='cc', bw='cv_ml', defaults=settings)
-        print(f"KDE bandwidth: {self._kde.bw}")
+        # print(f"KDE bandwidth: {self._kde.bw}")
 
     def __statsmodel_fit_data_cond(self, X : np.ndarray, Y : np.ndarray) -> None:
         settings = sm.nonparametric.EstimatorSettings(n_jobs=-1)

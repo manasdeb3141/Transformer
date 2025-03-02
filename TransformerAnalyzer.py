@@ -48,6 +48,11 @@ class TransformerAnalyzer:
         tokenizer_tgt_fname = Path(f"{self._tokenizer_dir}/tokenizer_{self._lang_tgt}.json")
         self._tokenizer_tgt = Tokenizer.from_file(str(tokenizer_tgt_fname))        
 
+        # Get the target language vocabulary as a dictionary
+        tgt_vocab = self._tokenizer_tgt.get_vocab()
+        self._tgt_vocab_keys = list(tgt_vocab.keys())
+        self._tgt_vocab_values = list(tgt_vocab.values())
+
 
     def __init_probes(self):
         # Encoder probe objects
@@ -110,6 +115,10 @@ class TransformerAnalyzer:
         return self._src_vocab_keys[self._src_vocab_values.index(token_id)]
 
 
+    def get_tgt_word_from_token(self, token_id : int) -> str:
+        return self._tgt_vocab_keys[self._tgt_vocab_values.index(token_id)]
+
+
     def load_enc_embedding_probes(self, epoch, load_epoch=True) -> None:
         self.enc_embedding_probe.load(epoch, self._probe_dir, self._probe_config["enc_embed_layer"], load_epoch)
         self.encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"], load_epoch) 
@@ -130,6 +139,11 @@ class TransformerAnalyzer:
         self.enc_5_attn_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_attn"], load_epoch)
         self.enc_5_feedforward_probe.load(epoch, self._probe_dir, self._probe_config["enc_layer_5_feedforward"], load_epoch)
         self.encoder_probe.load(epoch, self._probe_dir, self._probe_config["enc_block"], load_epoch)
+
+
+    def load_dec_embedding_probes(self, epoch, load_epoch=True) -> None:
+        self.dec_embedding_probe.load(epoch, self._probe_dir, self._probe_config["dec_embed_layer"], load_epoch)
+        self.decoder_probe.load(epoch, self._probe_dir, self._probe_config["dec_block"], load_epoch) 
 
 
     def load_decoder_probes(self, epoch, load_epoch=True) -> None:

@@ -122,6 +122,20 @@ class MutualInfoEstimator:
         norm_MI = MI / max(H_X, H_Y)
         return norm_MI
 
+    def KL_divergence(self, P_X : np.ndarray, P_Y : np.ndarray) -> float:
+        # Calculate the Kullback-Leibler divergence
+        P_Y[P_Y == 0] = np.finfo(float).eps
+        KL_div = simpson(P_X * np.ma.log2(P_X / P_Y).filled(0))
+
+        if KL_div < 0:
+            KL_div = 0
+
+        return KL_div    
+
+    def JS_divergence(self, P_X : np.ndarray, P_Y : np.ndarray) -> float:
+        JS_div = (0.5 * self.KL_divergence(P_X, (P_X + P_Y)/2)) + (0.5 * self.KL_divergence(P_Y, (P_X + P_Y)/2))
+        return JS_div
+
     def set_inputs(self, X : np.ndarray, Y : np.ndarray) -> None:
         if len(X.shape) < 2:
             self._X = np.expand_dims(X, axis=1)
@@ -191,7 +205,11 @@ class MutualInfoEstimator:
 
     def kraskov_MI(self) -> float:
         default_base=2
-        k=8
+        if len(self._X.shape) > 32:
+            k=8
+        else:
+            k=3
+
         H_X = ee.entropy(self._X, k=k, base=default_base)
         H_Y = ee.entropy(self._Y, k=k, base=default_base)
         H_XY = ee.entropy(np.hstack([self._X, self._Y]), k=k, base=default_base)
