@@ -108,15 +108,57 @@ special_dataset_2 = [
             "en" : "The doctor jumped on the moon",
             "fr" : "Le docteur a sauté sur la lune"
         }
-    }
+    },
+    { 
+        "id" : 3,
+        "translation": 
+        {
+            "en" : "The American jumped on the ground",
+            "fr" : "L'Américain a sauté à terre"
+        }
+    },
+    { 
+        "id" : 4,
+        "translation": 
+        {
+            "en" : "The Englishman jumped on the ground",
+            "fr" : "L'Anglais saute à terre"
+        }
+    },
 ]
 
-# The Transformer comes up with the following hallucination:
+# For sentence #1 the Transformer came up with the following hallucination:
 # TRANSLATION : Les fenêtres du brise battaient sur la lune . 
 #
 # which means:
 #   The breeze windows were beating on the moon
     
+special_dataset_3 = [
+    { 
+        "id" : 1,
+        "translation": 
+        {
+            "en" : "The American jumped",
+            "fr" : "L'Américain a sauté"
+        }
+    },
+    { 
+        "id" : 2,
+        "translation": 
+        {
+            "en" : "The Englishman jumped",
+            "fr" : "L'Anglais a sauté"
+        }
+    }
+]
+
+# For sentence #1 the Transformer came up with the following hallucination:
+# TRANSLATION: Le coup partit à l ' échelle"
+#
+# which means:
+# The shot went off the ladder
+
+
 
 class TransformerProbe:
     # Constants
