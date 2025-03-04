@@ -27,6 +27,7 @@ from mutual_info_estimator import MutualInfoEstimator
 
 # Functions implemented by this application
 from get_QKV import get_cross_atten_QKV
+from get_QKV import get_encoder_QKV
 from get_sentence_tokens import get_sentence_tokens
 
 def get_top_N_values(input_vals, N):
@@ -131,6 +132,7 @@ def plot_cross_atten_QKV_prime_MI(QKV_MI_dict, epoch, decoder_token_id, attentio
     VV_MI_estimate = QKV_MI_dict["VV_MI_estimate"]
     QK_MI_estimate = QKV_MI_dict["QK_MI_estimate"]
     QV_MI_estimate = QKV_MI_dict["QV_MI_estimate"]
+    enc_QK_MI_estimate = QKV_MI_dict["enc_QK_MI_estimate"]
 
     # Zero out the diagonal elements so that the non-diagnal elements are visible
     np.fill_diagonal(QQ_MI_estimate, 0)
@@ -206,7 +208,6 @@ def plot_cross_atten_QKV_prime_MI(QKV_MI_dict, epoch, decoder_token_id, attentio
     else:
         fig, ax = plt.subplots()
 
-        #img = axs[1].imshow(QK_MI_estimate.T, vmin=0, vmax=0.1, cmap=plt.cm.Wistia)
         img = ax.imshow(QK_MI_estimate.T, cmap=plt.cm.Wistia)
         # img = ax.imshow(query_MI_estimate.T, cmap=plt.cm.jet)
         ax.set_aspect('equal')
@@ -216,7 +217,6 @@ def plot_cross_atten_QKV_prime_MI(QKV_MI_dict, epoch, decoder_token_id, attentio
         fig.colorbar(img, ax=ax)
 
     fig.suptitle(f"Mutual Information between the decoder inputs for epoch {epoch}, token #{decoder_token_id}, attention layer {attention_layer}")
-
     plt.show(block=True)
 
 def plot_cross_atten_QKV_MI(QKV_MI_dict, epoch, decoder_token_id, attention_layer):
@@ -258,14 +258,14 @@ def plot_cross_atten_QKV_MI(QKV_MI_dict, epoch, decoder_token_id, attention_laye
         axs[2].set_yticks(range(0, len(input_words)), input_words, rotation=0)
     else:
         fig, axs = plt.subplots(1, 2)
-        img = axs[0].imshow(QK_MI_estimate.T, cmap=plt.cm.Wistia)
+        img = axs[0].imshow(QK_MI_estimate.T, vmin=0, vmax=0.1, cmap=plt.cm.Wistia)
         # img = ax.imshow(query_MI_estimate.T, cmap=plt.cm.jet)
         axs[0].set_aspect('equal')
         axs[0].set_title(f"MI between the rows of Q and K")
         axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
         axs[0].set_yticks(range(0, len(input_words)), input_words, rotation=0)
 
-        img = axs[1].imshow(QV_MI_estimate.T, cmap=plt.cm.Wistia)
+        img = axs[1].imshow(QV_MI_estimate.T, vmin=0, vmax=0.1, cmap=plt.cm.Wistia)
         # img = ax.imshow(query_MI_estimate.T, cmap=plt.cm.jet)
         axs[1].set_aspect('equal')
         axs[1].set_title(f"MI between the rows of Q and V")
@@ -278,11 +278,13 @@ def plot_cross_atten_QKV_MI(QKV_MI_dict, epoch, decoder_token_id, attention_laye
     plt.show(block=True)
 
  
-def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens):
+def process_cross_atten_QKV_prime(analyzer, QKV_dict, encoder_QKV_dict, attention_layer, tgt_sentence_tokens):
     QKV_atten_dict = QKV_dict[f"attention_{attention_layer}"]
     Q_prime = QKV_atten_dict["Q_prime"]
     K_prime = QKV_atten_dict["K_prime"]
     V_prime = QKV_atten_dict["V_prime"]
+    enc_QKV_atten_dict = encoder_QKV_dict[f"attention_{attention_layer}"]
+    enc_Q_prime = enc_QKV_atten_dict["Q_prime"]
 
     # Number of rows of the Query input matrix of the decoder
     N_rows = Q_prime.shape[0] 
@@ -292,7 +294,7 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sente
     i_pos, j_pos = np.meshgrid(i, j)
     ij_pos = np.vstack([i_pos.ravel(), j_pos.ravel()]).T
 
-    print("\nComputing the mutual information between the rows of Q ...")
+    print("\nComputing the mutual information between the rows of Q' ...")
     # Initialize the mutual information matrix
     QQ_MI_estimate = np.zeros((N_rows, N_rows))
     QQ_JSD_estimate = np.zeros((N_rows, N_rows))
@@ -310,7 +312,7 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sente
         QQ_MI_estimate[i, j] = MI
         QQ_JSD_estimate[i, j] = JSD
 
-    print("\nComputing the mutual information between the rows of K ...")
+    print("\nComputing the mutual information between the rows of K' ...")
     # Initialize the mutual information matrix
     KK_MI_estimate = np.zeros((N_rows, N_rows))
     KK_JSD_estimate = np.zeros((N_rows, N_rows))
@@ -329,7 +331,7 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sente
         KK_MI_estimate[i, j] = MI
         KK_JSD_estimate[i, j] = JSD
 
-    print("\nComputing the mutual information between the rows of V ...")
+    print("\nComputing the mutual information between the rows of V' ...")
     # Initialize the mutual information matrix
     VV_MI_estimate = np.zeros((N_rows, N_rows))
     VV_JSD_estimate = np.zeros((N_rows, N_rows))
@@ -349,7 +351,7 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sente
         VV_MI_estimate[i, j] = MI
         VV_JSD_estimate[i, j] = JSD
 
-    print("\nComputing the mutual information between the rows of Q and K ...")
+    print("\nComputing the mutual information between the rows of Q' and K' ...")
     # Initialize the mutual information matrix
     QK_MI_estimate = np.zeros((N_rows, N_rows))
 
@@ -365,7 +367,7 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sente
         QK_MI_estimate[i, j] = MI
 
 
-    print("\nComputing the mutual information between the rows of Q and V ...")
+    print("\nComputing the mutual information between the rows of Q' and V' ...")
     # Initialize the mutual information matrix
     QV_MI_estimate = np.zeros((N_rows, N_rows))
 
@@ -380,12 +382,36 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sente
         # MI, _ = MI_estimator.MINE_MI()
         QV_MI_estimate[i, j] = MI
 
+    print("\nComputing the mutual information between the rows of encoder Q' and decoder K' ...")
+    # Initialize the mutual information matrix
+    enc_QK_MI_estimate = np.zeros((N_rows, N_rows))
+
+    for i, j in tqdm(ij_pos):
+        X_row = enc_Q_prime[i]
+        Y_row = K_prime[j]
+
+        MI_estimator = MutualInfoEstimator(X_row, Y_row)
+        _, MI_data = MI_estimator.kernel_MI(KDE_module='sklearn')
+        #MI_data = MI_estimator.kraskov_MI()
+        MI = MI_data["MI"]
+        # MI, _ = MI_estimator.MINE_MI()
+        enc_QK_MI_estimate[i, j] = MI
+
     # Get the target words from the tokens
     input_words = list()
     for token in tgt_sentence_tokens:
             input_words.append(analyzer.get_tgt_word_from_token(token))
 
-    return dict(input_words=input_words, QQ_MI_estimate=QQ_MI_estimate, QQ_JSD_estimate=QQ_JSD_estimate, KK_MI_estimate=KK_MI_estimate, KK_JSD_estimate=KK_JSD_estimate, VV_MI_estimate=VV_MI_estimate, VV_JSD_estimate=VV_JSD_estimate, QK_MI_estimate=QK_MI_estimate, QV_MI_estimate=QV_MI_estimate)
+    return dict(input_words=input_words, 
+                QQ_MI_estimate=QQ_MI_estimate, 
+                QQ_JSD_estimate=QQ_JSD_estimate, 
+                KK_MI_estimate=KK_MI_estimate, 
+                KK_JSD_estimate=KK_JSD_estimate, 
+                VV_MI_estimate=VV_MI_estimate, 
+                VV_JSD_estimate=VV_JSD_estimate, 
+                QK_MI_estimate=QK_MI_estimate, 
+                QV_MI_estimate=QV_MI_estimate,
+                enc_QK_MI_estimate = enc_QK_MI_estimate)
 
 
 def process_cross_atten_QKV_inputs(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens):
@@ -481,7 +507,7 @@ def main():
     sentence_id = 3
     decoder_token_id = 10
 
-    save_file = Path(f"data/QKV_cross_epoch_{epoch}_layer_{attention_layer}_sentence_{sentence_id}_token_{decoder_token_id}.pt")
+    save_file = Path(f"data/cross_QKV/QKV_cross_epoch_{epoch}_layer_{attention_layer}_sentence_{sentence_id}_token_{decoder_token_id}.pt")
 
     if save_file.exists():
         print(f"QKV cross-attention data file {str(save_file)} found. Loading it ...")
@@ -494,7 +520,8 @@ def main():
         analyzer = TransformerAnalyzer(model_config, probe_config)
         analyzer.run()
 
-        # For this epoch, load all the decoder probe files from disk
+        # For this epoch, load all the encoder and decoder probe files from disk
+        analyzer.load_encoder_probes(epoch)
         analyzer.load_decoder_probes(epoch)
 
         # Number of input sentences in this epoch
@@ -504,9 +531,10 @@ def main():
         N_src_tokens, N_tgt_tokens, tgt_sentence_tokens = get_sentence_tokens(analyzer, sentence_id, decoder_token_id)
 
         QKV_dict = get_cross_atten_QKV(analyzer, sentence_id, decoder_token_id, N_src_tokens)
+        encoder_QKV_dict = get_encoder_QKV(analyzer, sentence_id, N_src_tokens)
 
         QKV_MI_dict = process_cross_atten_QKV_inputs(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens)
-        cross_QKV_prime_MI_dict = process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens)
+        cross_QKV_prime_MI_dict = process_cross_atten_QKV_prime(analyzer, QKV_dict, encoder_QKV_dict, attention_layer, tgt_sentence_tokens)
 
         cross_QKV_prime_save_dict = dict(QKV_MI_dict=QKV_MI_dict, cross_QKV_prime_MI_dict=cross_QKV_prime_MI_dict)
 

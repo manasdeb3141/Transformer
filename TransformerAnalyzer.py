@@ -169,6 +169,11 @@ class TransformerAnalyzer:
         self.decoder_probe.load(epoch, self._probe_dir, self._probe_config["dec_block"], load_epoch)
 
 
+    def load_projection_probes(self, epoch, load_epoch=True) -> None:
+        # Load the epoch's projection layer probe
+        self.projection_probe.load(epoch, self._probe_dir, self._probe_config["proj_layer"], load_epoch)
+
+
     def load_probes(self, epoch, load_epoch=True) -> None:
         # Load the epoch's encoder probes
         self.load_encoder_probes(epoch, load_epoch)

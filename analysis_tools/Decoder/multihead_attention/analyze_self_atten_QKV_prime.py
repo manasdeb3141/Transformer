@@ -420,7 +420,7 @@ def main():
     sentence_id = 3
     decoder_token_id = 10
 
-    save_file = Path(f"data/QKV_self_epoch_{epoch}_layer_{attention_layer}_sentence_{sentence_id}_token_{decoder_token_id}.pt")
+    save_file = Path(f"data/self_QKV/QKV_self_epoch_{epoch}_layer_{attention_layer}_sentence_{sentence_id}_token_{decoder_token_id}.pt")
 
     if save_file.exists():
         print(f"QKV self-attention data file {str(save_file)} found. Loading it ...")

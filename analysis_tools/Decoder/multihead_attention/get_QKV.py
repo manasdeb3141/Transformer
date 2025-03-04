@@ -208,6 +208,69 @@ def get_cross_atten_QKV(analyzer : TransformerAnalyzer, sentence_id : int, decod
     return QKV_dict 
 
 
+def get_encoder_QKV(analyzer : TransformerAnalyzer, sentence_id : int, N_src_tokens : int):
+    # Attention layer 0
+    enc_attn_input = analyzer.enc_0_attn_probe._probe_in[sentence_id]
+    query = enc_attn_input["query"].squeeze()
+    key = enc_attn_input["key"].squeeze()
+    value = enc_attn_input["value"].squeeze()
+    query_0 = query[:N_src_tokens]
+    key_0 = key[:N_src_tokens]
+    value_0 = value[:N_src_tokens]
+
+    # Attention layer 1
+    enc_attn_input = analyzer.enc_1_attn_probe._probe_in[sentence_id]
+    query = enc_attn_input["query"].squeeze()
+    key = enc_attn_input["key"].squeeze()
+    value = enc_attn_input["value"].squeeze()
+    query_1 = query[:N_src_tokens]
+    key_1 = key[:N_src_tokens]
+    value_1 = value[:N_src_tokens]
+    
+    # Attention layer 2
+    enc_attn_input = analyzer.enc_2_attn_probe._probe_in[sentence_id]
+    query = enc_attn_input["query"].squeeze()
+    key = enc_attn_input["key"].squeeze()
+    value = enc_attn_input["value"].squeeze()
+    query_2 = query[:N_src_tokens]
+    key_2 = key[:N_src_tokens]
+    value_2 = value[:N_src_tokens]
+
+    # Attention layer 3
+    enc_attn_input = analyzer.enc_3_attn_probe._probe_in[sentence_id]
+    query = enc_attn_input["query"].squeeze()
+    key = enc_attn_input["key"].squeeze()
+    value = enc_attn_input["value"].squeeze()
+    query_3 = query[:N_src_tokens]
+    key_3 = key[:N_src_tokens]
+    value_3 = value[:N_src_tokens]
+
+    # Attention layer 4
+    enc_attn_input = analyzer.enc_4_attn_probe._probe_in[sentence_id]
+    query = enc_attn_input["query"].squeeze()
+    key = enc_attn_input["key"].squeeze()
+    value = enc_attn_input["value"].squeeze()
+    query_4 = query[:N_src_tokens]
+    key_4 = key[:N_src_tokens]
+    value_4 = value[:N_src_tokens]
+
+    # Attention layer 5
+    enc_attn_input = analyzer.enc_5_attn_probe._probe_in[sentence_id]
+    query = enc_attn_input["query"].squeeze()
+    key = enc_attn_input["key"].squeeze()
+    value = enc_attn_input["value"].squeeze()
+    query_5 = query[:N_src_tokens]
+    key_5 = key[:N_src_tokens]
+    value_5 = value[:N_src_tokens]
+
+    QKV_dict = { 'attention_0': {"Q_prime": query_0, "K_prime": key_0, "V_prime": value_0},
+                 'attention_1': {"Q_prime": query_1, "K_prime": key_1, "V_prime": value_1},
+                 'attention_2': {"Q_prime": query_2, "K_prime": key_2, "V_prime": value_2},
+                 'attention_3': {"Q_prime": query_3, "K_prime": key_3, "V_prime": value_3},
+                 'attention_4': {"Q_prime": query_4, "K_prime": key_4, "V_prime": value_4},
+                 'attention_5': {"Q_prime": query_5, "K_prime": key_5, "V_prime": value_5} }
+
+    return QKV_dict 
 
 def get_self_atten_QKV_head(analyzer : TransformerAnalyzer, sentence_id : int, decoder_token_id : int):
     # Attention layer 0
