@@ -132,7 +132,6 @@ def plot_cross_atten_QKV_prime_MI(QKV_MI_dict, epoch, decoder_token_id, attentio
     VV_MI_estimate = QKV_MI_dict["VV_MI_estimate"]
     QK_MI_estimate = QKV_MI_dict["QK_MI_estimate"]
     QV_MI_estimate = QKV_MI_dict["QV_MI_estimate"]
-    enc_QK_MI_estimate = QKV_MI_dict["enc_QK_MI_estimate"]
 
     # Zero out the diagonal elements so that the non-diagnal elements are visible
     np.fill_diagonal(QQ_MI_estimate, 0)
@@ -278,13 +277,11 @@ def plot_cross_atten_QKV_MI(QKV_MI_dict, epoch, decoder_token_id, attention_laye
     plt.show(block=True)
 
  
-def process_cross_atten_QKV_prime(analyzer, QKV_dict, encoder_QKV_dict, attention_layer, tgt_sentence_tokens):
+def process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens):
     QKV_atten_dict = QKV_dict[f"attention_{attention_layer}"]
     Q_prime = QKV_atten_dict["Q_prime"]
     K_prime = QKV_atten_dict["K_prime"]
     V_prime = QKV_atten_dict["V_prime"]
-    enc_QKV_atten_dict = encoder_QKV_dict[f"attention_{attention_layer}"]
-    enc_Q_prime = enc_QKV_atten_dict["Q_prime"]
 
     # Number of rows of the Query input matrix of the decoder
     N_rows = Q_prime.shape[0] 
@@ -382,21 +379,6 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, encoder_QKV_dict, attentio
         # MI, _ = MI_estimator.MINE_MI()
         QV_MI_estimate[i, j] = MI
 
-    print("\nComputing the mutual information between the rows of encoder Q' and decoder K' ...")
-    # Initialize the mutual information matrix
-    enc_QK_MI_estimate = np.zeros((N_rows, N_rows))
-
-    for i, j in tqdm(ij_pos):
-        X_row = enc_Q_prime[i]
-        Y_row = K_prime[j]
-
-        MI_estimator = MutualInfoEstimator(X_row, Y_row)
-        _, MI_data = MI_estimator.kernel_MI(KDE_module='sklearn')
-        #MI_data = MI_estimator.kraskov_MI()
-        MI = MI_data["MI"]
-        # MI, _ = MI_estimator.MINE_MI()
-        enc_QK_MI_estimate[i, j] = MI
-
     # Get the target words from the tokens
     input_words = list()
     for token in tgt_sentence_tokens:
@@ -410,8 +392,7 @@ def process_cross_atten_QKV_prime(analyzer, QKV_dict, encoder_QKV_dict, attentio
                 VV_MI_estimate=VV_MI_estimate, 
                 VV_JSD_estimate=VV_JSD_estimate, 
                 QK_MI_estimate=QK_MI_estimate, 
-                QV_MI_estimate=QV_MI_estimate,
-                enc_QK_MI_estimate = enc_QK_MI_estimate)
+                QV_MI_estimate=QV_MI_estimate)
 
 
 def process_cross_atten_QKV_inputs(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens):
@@ -531,10 +512,10 @@ def main():
         N_src_tokens, N_tgt_tokens, tgt_sentence_tokens = get_sentence_tokens(analyzer, sentence_id, decoder_token_id)
 
         QKV_dict = get_cross_atten_QKV(analyzer, sentence_id, decoder_token_id, N_src_tokens)
-        encoder_QKV_dict = get_encoder_QKV(analyzer, sentence_id, N_src_tokens)
+        # encoder_QKV_dict = get_encoder_QKV(analyzer, sentence_id, N_src_tokens)
 
         QKV_MI_dict = process_cross_atten_QKV_inputs(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens)
-        cross_QKV_prime_MI_dict = process_cross_atten_QKV_prime(analyzer, QKV_dict, encoder_QKV_dict, attention_layer, tgt_sentence_tokens)
+        cross_QKV_prime_MI_dict = process_cross_atten_QKV_prime(analyzer, QKV_dict, attention_layer, tgt_sentence_tokens)
 
         cross_QKV_prime_save_dict = dict(QKV_MI_dict=QKV_MI_dict, cross_QKV_prime_MI_dict=cross_QKV_prime_MI_dict)
 

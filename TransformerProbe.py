@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import LambdaLR
 import torchmetrics.text
+from torchmetrics.text import SacreBLEUScore
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import Dataset, DataLoader, random_split
 from tqdm import tqdm
@@ -184,6 +185,7 @@ class TransformerProbe:
         self._cer_list = list()
         self._wer_list = list()
         self._bleu_list = list()
+        self._only_validate = False
 
     def __create_probes(self, N_inputs) -> None:
         # Encoder probe objects
@@ -624,6 +626,7 @@ class TransformerProbe:
         N_epochs = config["num_epochs"]
         datasource = config["datasource"]
         use_special_dataset = config["use_special_dataset"]
+        self._only_validate = config["only_validate"]
 
         # Directory for loading the model weights
         model_dir = Path(model_folder)
@@ -636,7 +639,8 @@ class TransformerProbe:
         self._model = model
 
         # Hook the specific layers of the model
-        self.__hook_modules()
+        if self._only_validate is False:
+            self.__hook_modules()
 
         # Create the Bilingual dataset from the raw dataset (batch size is 1 for the validation run)
         if use_special_dataset > 0:
@@ -668,8 +672,13 @@ class TransformerProbe:
 
                 # Split the dataset as training and validation. We will only use the validation dataset
                 ds_raw_len = len(ds_raw)
-                train_ds_size = ds_raw_len - self.MAX_PROBE_INPUT_DATA
-                val_ds_size = self.MAX_PROBE_INPUT_DATA
+                if self._only_validate is False:
+                    train_ds_size = ds_raw_len - self.MAX_PROBE_INPUT_DATA
+                    val_ds_size = self.MAX_PROBE_INPUT_DATA
+                else:
+                    train_ds_size = int(0.9 * ds_raw_len)
+                    val_ds_size = ds_raw_len - train_ds_size
+
                 train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
 
             val_ds = BilingualDataset(val_ds_raw, self._tokenizer_src, self._tokenizer_tgt, lang_src, lang_tgt, self._seq_len)
@@ -695,14 +704,22 @@ class TransformerProbe:
         # memory for storing the probes
         N_inputs = min(self.MAX_PROBE_INPUT_DATA, len(self._val_dataloader))
         # N_inputs = len(self._val_dataloader)
-        self.__create_probes(N_inputs)
+
+        if self._only_validate is False:
+            self.__create_probes(N_inputs)
 
         # Tensorboard writer
         log_dir = probe_dir / "runs"
         self._writer = SummaryWriter(log_dir)
 
         # Start the probing
-        for epoch in range(N_epochs):
+        if self._only_validate is False:
+            epochs_to_probe = np.arange(0, N_epochs)
+        else:
+            # Only run validation for the last epoch
+            epochs_to_probe = [N_epochs - 1]
+
+        for epoch in epochs_to_probe:
             torch.cuda.empty_cache()
 
             # Save the epoch
@@ -721,10 +738,12 @@ class TransformerProbe:
             self.__validate(epoch)
 
             # Save the probes for the current epoch
-            self.__save_probes(epoch, probe_dir, probe_config)
+            if self._only_validate is False:
+                self.__save_probes(epoch, probe_dir, probe_config)
             
         # Hook cleanup
-        self.__unhook_modules()
+        if self._only_validate is False:
+            self.__unhook_modules()
 
         # Close the Tensorboard summary file
         if self._writer:
@@ -803,7 +822,11 @@ class TransformerProbe:
         predicted = list()
 
         self._model.eval()
-        max_validn_count = min(self.MAX_PROBE_INPUT_DATA, len(self._val_dataloader))
+
+        if self._only_validate is True:
+            max_validn_count = len(self._val_dataloader)
+        else:
+            max_validn_count = min(self.MAX_PROBE_INPUT_DATA, len(self._val_dataloader))
 
         with torch.no_grad():
             self._input_count = 0
@@ -856,8 +879,10 @@ class TransformerProbe:
         self._wer_list.append(wer)
 
         # Compute the BLEU metric
-        metric = torchmetrics.text.BLEUScore()
-        bleu = metric(predicted, expected)
+        # metric = torchmetrics.text.BLEUScore()
+        # bleu = metric(predicted, expected)
+        sacre_bleu_metric = SacreBLEUScore(n_gram=3)
+        bleu = sacre_bleu_metric(predicted, [expected])
         self._bleu_list.append(bleu)
 
         # Write to the Tensorboard summary file
