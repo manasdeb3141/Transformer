@@ -13,6 +13,7 @@ import numpy as np
 from pathlib import Path
 from termcolor import cprint, colored
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from tqdm import tqdm
 
 # Huggingface datasets and tokenizers
@@ -100,7 +101,7 @@ def plot_MI_bars(QKV_dict, word_list):
         # Plot Q'
         top_vals, N_top_indices = get_top_N_values(query_MI, 3)
         top_indices = np.argwhere(query_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
         barplot_Q = axs[0].bar(x_vals, query_MI, color=bar_colors)
         axs[0].set_title(f"Q'")
         axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
@@ -108,7 +109,7 @@ def plot_MI_bars(QKV_dict, word_list):
         # Plot K'
         top_vals, N_top_indices = get_top_N_values(key_MI, 3)
         top_indices = np.argwhere(key_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
         barplot_K = axs[1].bar(x_vals, key_MI, color=bar_colors)
         axs[1].set_title(f"K'")
         axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
@@ -116,7 +117,7 @@ def plot_MI_bars(QKV_dict, word_list):
         # Plot V'
         top_vals, N_top_indices = get_top_N_values(value_MI, 3)
         top_indices = np.argwhere(value_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
         barplot_V = axs[2].bar(x_vals, value_MI, color=bar_colors)
         axs[2].set_title(f"V'")
         axs[2].set_xticks(range(0, len(input_words)), input_words, rotation=90)
@@ -168,6 +169,9 @@ def plot_cross_atten_QKV_prime_MI(QKV_MI_dict, epoch, decoder_token_id, attentio
     axs[2].set_xticks(range(0, len(input_words)), input_words, rotation=90)
     axs[2].set_yticks(range(0, len(input_words)), input_words, rotation=0)
     # fig.colorbar(img, ax=axs[2])
+    # divider = make_axes_locatable(axs[2])
+    # cax = divider.append_axes("right", size="5%", pad=0.05)
+    # fig.colorbar(img, cax=cax)
 
     fig.colorbar(img, ax=axs.ravel().tolist())
     fig.suptitle(f"Mutual Information between the decoder inputs for epoch {epoch}, token #{decoder_token_id}, attention layer {attention_layer}")

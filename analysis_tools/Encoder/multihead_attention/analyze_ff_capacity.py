@@ -126,25 +126,25 @@ def compute_FF_capacity(FF_inout, encoder_layer, prob_dict=None):
 
 # Main function of this script
 def main():
-    print("Computing the capcity of the feed-forward layer of the encoder ...")
+    print("Computing the capacity of the feed-forward layer of the encoder ...")
 
     epoch = 19
     encoder_layer = 2
-    sentence_id = 3
 
-    save_file = Path(f"data/ff_capacity_epoch_{epoch}_layer_{encoder_layer}_sentence_{sentence_id}.pt")
+    save_file = Path(f"data/ff_capacity_epoch_{epoch}_layer_{encoder_layer}.pt")
 
     if save_file.exists():
         print(f"Feed-forward capacity data file {str(save_file)} found. Loading it ...")
         prob_data = torch.load(save_file, weights_only=False)
         FF_capacity, _ = compute_FF_capacity(None, None, prob_data)
+        print(f"Feed-forward capacity: {FF_capacity}")
     else:
         cfg_obj = LangModelConfig()
         model_config = cfg_obj.get_config()
 
         model_config["tokenizer_dir"] = "../../../model_data/opus_books_en_fr/tokens"
         model_config["model_dir"] = "../../../model_data/opus_books_en_fr/weights"
-        model_config["analyze_dir"] = "../../../model_data/opus_books_en_fr/probes_8"
+        model_config["analyze_dir"] = "../../../model_data/opus_books_en_fr/probes_50"
         #model_config["tokenizer_dir"] = "../../../model_data_d32/opus_books_en_fr/tokens"
         #model_config["model_dir"] = "../../../model_data_d32/opus_books_en_fr/weights"
 
@@ -159,11 +159,11 @@ def main():
         # For this epoch, load all the encoder layer probe files from disk
         analyzer.load_encoder_probes(epoch)
 
-        # This list contains all the FF input and output arrays for all the attention layers of all the input sentences
-        FF_list = list()
-        
         # Number of input sentences in this epoch
         N_inputs = len(analyzer.encoder_probe._probe_in)
+        print(f"Number of input sentences: {N_inputs}")
+
+        max_capacity = -1e9
 
         for sentence_id in range(N_inputs):
             # Get the tokens of the source and target sentences
@@ -171,18 +171,13 @@ def main():
 
             # Get the query, key, value arrays for all the attention layers of this input sentence
             FF_inout = get_FF_input_output(analyzer, sentence_id, N_src_tokens)
-            FF_list.append(FF_inout)
+            FF_capacity, prob_data = compute_FF_capacity(FF_inout, encoder_layer)
+            if FF_capacity > max_capacity:
+                max_capacity = FF_capacity
+                torch.save(prob_data, save_file)
 
-        # Concatenate all the FF input and output arrays
-        FF_stacked = stack_FF_matrix(FF_list, N_inputs)
+            print(f"Sentence: {sentence_id}, N_tokens: {N_src_tokens}, Feed-forward capacity: {FF_capacity}, Max capacity: {max_capacity}")
 
-        FF_capacity, prob_data = compute_FF_capacity(FF_stacked, encoder_layer)
-
-        # Save the file
-        torch.save(prob_data, save_file)
-        
-    print(f"Feed-forward capacity: {FF_capacity}")
-    
 
 # Entry point of the script
 if __name__ == '__main__':

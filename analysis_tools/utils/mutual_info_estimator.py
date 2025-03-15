@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 from pdf_estimator import PdfEstimator
 from scipy.integrate import simpson
+from typing import Tuple
 
 from npeet import entropy_estimators as ee
 from MINE_estimator import MINE_estimator
@@ -30,7 +31,7 @@ class MutualInfoEstimator:
             self._Y = None
 
 
-    def __estimate_pdf(self, num_points : int, continuous : bool = True) -> np.ndarray:
+    def __estimate_pdf(self, num_points : int, same_range=False, continuous : bool = True) -> np.ndarray:
         xy_samples = np.hstack([self._X, self._Y])
 
         min_X = np.amin(self._X)
@@ -41,8 +42,13 @@ class MutualInfoEstimator:
         pdf_estimator = PdfEstimator(self._KDE_est_module)
         pdf_estimator.fit_data(xy_samples)
 
+        if same_range:
+            min_X = min_Y = min(min_X, min_Y)
+            max_X = max_Y = max(max_X, max_Y)
+
         x = np.linspace(min_X, max_X, num_points)
         y = np.linspace(min_Y, max_Y, num_points)
+
         xpos, ypos = np.meshgrid(x, y)
         xy_samples = np.vstack([xpos.ravel(), ypos.ravel()]).T
         pdf_est = pdf_estimator.pdf(xy_samples)
@@ -125,7 +131,8 @@ class MutualInfoEstimator:
     def KL_divergence(self, P_X : np.ndarray, P_Y : np.ndarray) -> float:
         # Calculate the Kullback-Leibler divergence
         P_Y[P_Y == 0] = np.finfo(float).eps
-        KL_div = simpson(P_X * np.ma.log2(P_X / P_Y).filled(0))
+        # KL_div = simpson(np.squeeze(P_X * np.ma.log2(P_X / P_Y).filled(0)))
+        KL_div = np.sum(np.squeeze(P_X * np.ma.log2(P_X / P_Y).filled(0)))
 
         if KL_div < 0:
             KL_div = 0
@@ -135,6 +142,12 @@ class MutualInfoEstimator:
     def JS_divergence(self, P_X : np.ndarray, P_Y : np.ndarray) -> float:
         JS_div = (0.5 * self.KL_divergence(P_X, (P_X + P_Y)/2)) + (0.5 * self.KL_divergence(P_Y, (P_X + P_Y)/2))
         return JS_div
+
+    def pdf_softmax(self, beta=1.0) -> Tuple[np.ndarray, np.ndarray]:
+        P_X = np.exp(beta * self._X)/np.sum(np.exp(beta * self._X))
+        P_Y = np.exp(beta * self._Y)/np.sum(np.exp(beta * self._Y))
+
+        return P_X, P_Y
 
     def set_inputs(self, X : np.ndarray, Y : np.ndarray) -> None:
         if len(X.shape) < 2:
@@ -152,7 +165,7 @@ class MutualInfoEstimator:
 
         if continuous:
             # Calculate the PDF based on Kernel Density Estimation
-            prob_data = self.__estimate_pdf(N_points, continuous=True)
+            prob_data = self.__estimate_pdf(N_points, same_range=False, continuous=True)
             P_XY = prob_data["P_XY"]
             P_X = prob_data["P_X"]
             P_Y = prob_data["P_Y"]
@@ -250,3 +263,28 @@ class MutualInfoEstimator:
             MI = 0
 
         return (MI * np.log2(np.exp(1))), run_log
+
+
+    def BC_stats(self, softmax_pdf = True, N_points=100, continuous=True) -> dict:
+        # Compute the Battacharyya Coefficient
+        if softmax_pdf:
+            P_X, P_Y = self.pdf_softmax()
+        else:
+            prob_data = self.__estimate_pdf(N_points, same_range=True, continuous=True)
+            P_X = prob_data["P_X"]
+            P_Y = prob_data["P_Y"]
+
+        # Compute the Battacharyya Coefficient
+        BC = simpson(np.sqrt(P_X * P_Y))
+
+        # Compute the Bhattacharyya distance
+        if BC == 0:
+            BD = np.inf
+        else:
+            BD = -np.log(BC)
+
+        BC_data = dict()
+        BC_data["BC"] = BC
+        BC_data["BD"] = BD
+
+        return BC_data

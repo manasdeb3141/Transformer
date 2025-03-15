@@ -33,7 +33,7 @@ class LangModelConfig(ModelConfig):
             "tokenizer_dir" : "model_data/opus_books_en_fr/tokens",
             "model_dir"     : "model_data/opus_books_en_fr/weights",
             "test_name": "model_data/opus_books_en_fr/runs",
-            # "dataset_dir": "model_data/opus_books_en_fr/dataset",
+            "dataset_dir": "model_data/opus_books_en_fr/dataset",
             "probe_dir": "model_data/opus_books_en_fr/probes",
             "train_probe_dir" : "model_data/opus_books_en_fr/train_probes",
             "analyze_dir": "model_data/opus_books_en_fr/probes",

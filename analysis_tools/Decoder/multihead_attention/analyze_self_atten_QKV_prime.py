@@ -36,7 +36,36 @@ def get_top_N_values(input_vals, N):
     # Return the N largest elements and their indices
     return input_vals[indices], indices
 
-def plot_MI_bars(QKV_dict, word_list):
+def plot_MI_bars_QK_prime(QKV_dict, word_list):
+    QK_MI_estimate = QKV_dict["QK_MI_estimate"]
+    input_words = QKV_dict["input_words"]
+
+    for word in word_list:
+        word_index = input_words.index(word)
+        QK_MI = QK_MI_estimate[word_index]
+
+        fig, ax = plt.subplots()
+        x_vals = np.arange(0, len(input_words))
+
+        # Plot MI between the rows of Q' and K' prime
+        top_vals, N_top_indices = get_top_N_values(QK_MI, 3)
+        top_indices = np.argwhere(QK_MI >= min(top_vals)).squeeze().tolist()
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
+        barplot_Q = ax.bar(x_vals, QK_MI, color=bar_colors)
+        ax.set_title(f"MI between the row of Q' and all the rows of K' for the word '{word}'")
+        ax.set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        ax.set_ylabel("Mutual Information")
+        for bar in barplot_Q:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            ax.spines[sp].set_visible(False)
+
+        fig.suptitle(f"Mutual Information between the word '{word}' and other words")
+        plt.show(block=True)
+
+
+def plot_MI_bars_QKV_prime(QKV_dict, word_list):
     query_MI_estimate = QKV_dict["QQ_MI_estimate"]
     key_MI_estimate = QKV_dict["KK_MI_estimate"]
     value_MI_estimate = QKV_dict["VV_MI_estimate"]
@@ -58,26 +87,45 @@ def plot_MI_bars(QKV_dict, word_list):
         # Plot Q'
         top_vals, N_top_indices = get_top_N_values(query_MI, 3)
         top_indices = np.argwhere(query_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
         barplot_Q = axs[0].bar(x_vals, query_MI, color=bar_colors)
         axs[0].set_title(f"Q'")
         axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[0].set_ylabel("Mutual Information")
+        for bar in barplot_Q:
+            height = bar.get_height()
+            axs[0].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[0].spines[sp].set_visible(False)
 
         # Plot K'
         top_vals, N_top_indices = get_top_N_values(key_MI, 3)
         top_indices = np.argwhere(key_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
         barplot_K = axs[1].bar(x_vals, key_MI, color=bar_colors)
         axs[1].set_title(f"K'")
         axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[1].set_ylabel("Mutual Information")
+        for bar in barplot_K:
+            height = bar.get_height()
+            axs[1].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[1].spines[sp].set_visible(False)
+
 
         # Plot V'
         top_vals, N_top_indices = get_top_N_values(value_MI, 3)
         top_indices = np.argwhere(value_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
         barplot_V = axs[2].bar(x_vals, value_MI, color=bar_colors)
         axs[2].set_title(f"V'")
         axs[2].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[2].set_ylabel("Mutual Information")
+        for bar in barplot_V:
+            height = bar.get_height()
+            axs[2].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[2].spines[sp].set_visible(False)
 
         fig.suptitle(f"Mutual Information between the word '{word}' and other words")
         plt.subplots_adjust(hspace=0.5)
@@ -454,7 +502,8 @@ def main():
 
     word_list = ["chien", "dans", "wagon"]
     plot_self_atten_QKV_prime_MI(self_QKV_prime_MI_dict, epoch, decoder_token_id, attention_layer)
-    plot_MI_bars(self_QKV_prime_MI_dict, word_list) 
+    # plot_MI_bars_QKV_prime(self_QKV_prime_MI_dict, word_list) 
+    plot_MI_bars_QK_prime(self_QKV_prime_MI_dict, word_list)
 
     plot_JSD_estimate(self_QKV_prime_MI_dict, epoch, decoder_token_id, attention_layer)
 

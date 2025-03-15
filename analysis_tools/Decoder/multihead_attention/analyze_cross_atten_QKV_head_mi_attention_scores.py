@@ -51,22 +51,32 @@ def plot_MI_bars(QK_head_mi_dict, word_list):
         # Plot Q-K MI
         top_vals, N_top_indices = get_top_N_values(QK_MI, 3)
         top_indices = np.argwhere(QK_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
-        axs[0].bar(x_vals, QK_MI, color=bar_colors)
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
+        barplot = axs[0].bar(x_vals, QK_MI, color=bar_colors)
         axs[0].set_title("Q-K MI")
         axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
         axs[0].set_ylabel("Mutual Information")
-        axs[0].grid(True)
+        # axs[0].grid(True)
+        for bar in barplot:
+            height = bar.get_height()
+            axs[0].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[0].spines[sp].set_visible(False)
 
         # Plot attention score
         top_vals, N_top_indices = get_top_N_values(attention_score, 3)
         top_indices = np.argwhere(attention_score >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
-        axs[1].bar(x_vals, attention_score, color=bar_colors)
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
+        barplot = axs[1].bar(x_vals, attention_score, color=bar_colors)
         axs[1].set_title("Attention Score")
         axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
         axs[1].set_ylabel("Score")
-        axs[1].grid(True)
+        # axs[1].grid(True)
+        for bar in barplot:
+            height = bar.get_height()
+            axs[1].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[1].spines[sp].set_visible(False)
 
         fig.suptitle(f"Comparison of Q-K MI and Attention Score for word '{word}'")
         plt.subplots_adjust(hspace=0.5)

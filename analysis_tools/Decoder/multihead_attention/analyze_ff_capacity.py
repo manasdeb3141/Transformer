@@ -20,9 +20,66 @@ from mutual_info_estimator import MutualInfoEstimator
 
 # Functions implemented by this application
 from get_sentence_tokens import get_sentence_tokens
-from get_FF import get_FF_input_output
+# from get_FF import get_FF_input_output
 from BlahutArimoto import blahut_arimoto_capacity
 
+def get_FF_input_output(analyzer : TransformerAnalyzer, sentence_id : int):
+    # Encoder layer 0
+    dec_ff_input = analyzer.dec_0_feedforward_probe._probe_in[sentence_id]
+    dec_ff_output = analyzer.dec_0_feedforward_probe._probe_out[sentence_id]
+    ff_in_full = dec_ff_input.squeeze()     # seq_len x d_model
+    ff_out_full = dec_ff_output.squeeze()   # seq_len x d_model
+    ff_in_0 = ff_in_full
+    ff_out_0 = ff_out_full
+
+    # Encoder layer 1
+    dec_ff_input = analyzer.dec_1_feedforward_probe._probe_in[sentence_id]
+    dec_ff_output = analyzer.dec_1_feedforward_probe._probe_out[sentence_id]
+    ff_in_full = dec_ff_input.squeeze()     # seq_len x d_model
+    ff_out_full = dec_ff_output.squeeze()   # seq_len x d_model
+    ff_in_1 = ff_in_full
+    ff_out_1 = ff_out_full
+
+    # Encoder layer 2
+    dec_ff_input = analyzer.dec_2_feedforward_probe._probe_in[sentence_id]
+    dec_ff_output = analyzer.dec_2_feedforward_probe._probe_out[sentence_id]
+    ff_in_full = dec_ff_input.squeeze()     # seq_len x d_model
+    ff_out_full = dec_ff_output.squeeze()   # seq_len x d_model
+    ff_in_2 = ff_in_full
+    ff_out_2 = ff_out_full
+
+    # Encoder layer 3
+    dec_ff_input = analyzer.dec_3_feedforward_probe._probe_in[sentence_id]
+    dec_ff_output = analyzer.dec_3_feedforward_probe._probe_out[sentence_id]
+    ff_in_full = dec_ff_input.squeeze()     # seq_len x d_model
+    ff_out_full = dec_ff_output.squeeze()   # seq_len x d_model
+    ff_in_3 = ff_in_full
+    ff_out_3 = ff_out_full
+
+    # Encoder layer 4
+    dec_ff_input = analyzer.dec_4_feedforward_probe._probe_in[sentence_id]
+    dec_ff_output = analyzer.dec_4_feedforward_probe._probe_out[sentence_id]
+    ff_in_full = dec_ff_input.squeeze()     # seq_len x d_model
+    ff_out_full = dec_ff_output.squeeze()   # seq_len x d_model
+    ff_in_4 = ff_in_full
+    ff_out_4 = ff_out_full
+
+    # Encoder layer 5
+    dec_ff_input = analyzer.dec_5_feedforward_probe._probe_in[sentence_id]
+    dec_ff_output = analyzer.dec_5_feedforward_probe._probe_out[sentence_id]
+    ff_in_full = dec_ff_input.squeeze()     # seq_len x d_model
+    ff_out_full = dec_ff_output.squeeze()   # seq_len x d_model
+    ff_in_5 = ff_in_full
+    ff_out_5 = ff_out_full
+
+    ff_dict = { 'ff_0': {"ff_in": ff_in_0, "ff_out": ff_out_0},
+                'ff_1': {"ff_in": ff_in_1, "ff_out": ff_out_1},
+                'ff_2': {"ff_in": ff_in_2, "ff_out": ff_out_2},
+                'ff_3': {"ff_in": ff_in_3, "ff_out": ff_out_3},
+                'ff_4': {"ff_in": ff_in_4, "ff_out": ff_out_4},
+                'ff_5': {"ff_in": ff_in_5, "ff_out": ff_out_5}}
+
+    return ff_dict 
 
 def stack_FF_matrix(FF_list, N_inputs):
     ff_in_0_array = None; ff_out_0_array = None
@@ -143,21 +200,21 @@ def main():
 
     epoch = 19
     decoder_layer = 2
-    sentence_id = 3
 
-    save_file = Path(f"data/ff_capacity_epoch_{epoch}_layer_{decoder_layer}_sentence_{sentence_id}.pt")
+    save_file = Path(f"data/ff_capacity_epoch_{epoch}_layer_{decoder_layer}.pt")
 
     if save_file.exists():
         print(f"Feed-forward capacity data file {str(save_file)} found. Loading it ...")
         prob_data = torch.load(save_file, weights_only=False)
         FF_capacity, _ = compute_FF_capacity(None, None, prob_data)
+        print(f"Feed-forward capacity: {FF_capacity}")
     else:
         cfg_obj = LangModelConfig()
         model_config = cfg_obj.get_config()
 
         model_config["tokenizer_dir"] = "../../../model_data/opus_books_en_fr/tokens"
         model_config["model_dir"] = "../../../model_data/opus_books_en_fr/weights"
-        model_config["analyze_dir"] = "../../../model_data/opus_books_en_fr/probes_8"
+        model_config["analyze_dir"] = "../../../model_data/opus_books_en_fr/probes_50"
         #model_config["tokenizer_dir"] = "../../../model_data_d32/opus_books_en_fr/tokens"
         #model_config["model_dir"] = "../../../model_data_d32/opus_books_en_fr/weights"
 
@@ -172,30 +229,28 @@ def main():
         # For this epoch, load all the decoder layer probe files from disk
         analyzer.load_decoder_probes(epoch)
 
-        # This list contains all the FF input and output arrays for all the attention layers of all the input sentences
-        FF_list = list()
-        
         # Number of input sentences in this epoch
         N_inputs = len(analyzer.decoder_probe._probe_in)
+        print(f"Number of input sentences: {N_inputs}")
+
+        max_capacity = -1e9
 
         for sentence_id in range(N_inputs):
             # Get the number of tokens in the sentence input to the decoder
-            decoder_token_id=len(analyzer.decoder_probe._probe_in[sentence_id])-1
-            tgt_mask=analyzer.decoder_probe._probe_in[sentence_id][decoder_token_id]["tgt_mask"]
+            # decoder_token_id=len(analyzer.decoder_probe._probe_in[sentence_id])-1
+            # tgt_mask=analyzer.decoder_probe._probe_in[sentence_id][decoder_token_id]["tgt_mask"]
+            tgt_mask=analyzer.decoder_probe._probe_in[sentence_id]["tgt_mask"]
+            N_tgt_tokens = np.count_nonzero(np.squeeze(tgt_mask))
 
             # Get the query, key, value arrays for all the attention layers of this input sentence
-            FF_inout = get_FF_input_output(analyzer, sentence_id, decoder_token_id)
-            FF_list.append(FF_inout)
+            FF_inout = get_FF_input_output(analyzer, sentence_id)
+            FF_capacity, prob_data = compute_FF_capacity(FF_inout, decoder_layer)
+            if FF_capacity > max_capacity:
+                max_capacity = FF_capacity
+                torch.save(prob_data, save_file)
 
-        # Concatenate all the FF input and output arrays
-        FF_stacked = stack_FF_matrix(FF_list, N_inputs)
+            print(f"Sentence: {sentence_id}, N_tokens: {N_tgt_tokens}, Feed-forward capacity: {FF_capacity}, Max capacity: {max_capacity}")
 
-        FF_capacity, prob_data = compute_FF_capacity(FF_stacked, decoder_layer)
-
-        # Save the file
-        torch.save(prob_data, save_file)
-        
-    print(f"Feed-forward capacity: {FF_capacity}")
     
 
 # Entry point of the script

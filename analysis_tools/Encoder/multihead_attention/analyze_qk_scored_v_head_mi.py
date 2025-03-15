@@ -47,19 +47,29 @@ def plot_MI_bars(QK_scored_V_head_mi, word_list):
         # Plot Q-K MI
         top_vals, N_top_indices = get_top_N_values(QV_MI, 3)
         top_indices = np.argwhere(QV_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
-        axs[0].bar(x_vals, QV_MI, color=bar_colors)
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
+        barplot = axs[0].bar(x_vals, QV_MI, color=bar_colors)
         axs[0].set_title("Q-V MI")
         axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
         axs[0].set_ylabel("Mutual Information")
+        for bar in barplot:
+            height = bar.get_height()
+            axs[0].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[0].spines[sp].set_visible(False)
 
         top_vals, N_top_indices = get_top_N_values(KV_MI, 3)
         top_indices = np.argwhere(KV_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
-        axs[1].bar(x_vals, KV_MI, color=bar_colors)
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
+        barplot = axs[1].bar(x_vals, KV_MI, color=bar_colors)
         axs[1].set_title("K-V MI")
         axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
         axs[1].set_ylabel("Mutual Information")
+        for bar in barplot:
+            height = bar.get_height()
+            axs[1].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[1].spines[sp].set_visible(False)
 
         fig.suptitle(f"Q-V and K-V MI after scoring for word '{word}'")
         plt.subplots_adjust(hspace=0.5)
@@ -72,44 +82,68 @@ def plot_QK_scored_V_head_mi(QK_scored_V_head_mi, head_id, epoch, attention_laye
     KV_scored_MI_estimate = QK_scored_V_head_mi["KV_scored_MI_estimate"]
     input_words = QK_scored_V_head_mi["input_words"]
 
-    max_val = np.max([np.max(QV_MI_estimate), np.max(KV_MI_estimate), np.max(QV_scored_MI_estimate), np.max(KV_scored_MI_estimate)])
 
-    fig, axs = plt.subplots(2,2)
-    img = axs[0, 0].imshow(QV_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
-    for i in range(QV_MI_estimate.shape[0]):
-        for j in range(QV_MI_estimate.shape[1]):
-            text = axs[0, 0].text(j, i, f"{QV_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
-    axs[0, 0].set_aspect('equal')
-    axs[0, 0].set_title(f"MI between the Q and V heads")
-    axs[0, 0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
-    axs[0, 0].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+    show_4_plots = False
+    if show_4_plots:
+        max_val = np.max([np.max(QV_MI_estimate), np.max(KV_MI_estimate), np.max(QV_scored_MI_estimate), np.max(KV_scored_MI_estimate)])
+        fig, axs = plt.subplots(2,2)
+        img = axs[0, 0].imshow(QV_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+        for i in range(QV_MI_estimate.shape[0]):
+            for j in range(QV_MI_estimate.shape[1]):
+                text = axs[0, 0].text(j, i, f"{QV_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+        axs[0, 0].set_aspect('equal')
+        axs[0, 0].set_title(f"MI between the Q and V heads")
+        axs[0, 0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[0, 0].set_yticks(range(0, len(input_words)), input_words, rotation=0)
 
-    img = axs[0, 1].imshow(KV_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
-    for i in range(KV_MI_estimate.shape[0]):
-        for j in range(KV_MI_estimate.shape[1]):
-            text = axs[0, 1].text(j, i, f"{KV_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
-    axs[0, 1].set_aspect('equal')
-    axs[0, 1].set_title(f"MI between the K and V heads")
-    axs[0, 1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
-    axs[0, 1].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+        img = axs[0, 1].imshow(KV_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+        for i in range(KV_MI_estimate.shape[0]):
+            for j in range(KV_MI_estimate.shape[1]):
+                text = axs[0, 1].text(j, i, f"{KV_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+        axs[0, 1].set_aspect('equal')
+        axs[0, 1].set_title(f"MI between the K and V heads")
+        axs[0, 1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[0, 1].set_yticks(range(0, len(input_words)), input_words, rotation=0)
 
-    img = axs[1, 0].imshow(QV_scored_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
-    for i in range(QV_scored_MI_estimate.shape[0]):
-        for j in range(QV_scored_MI_estimate.shape[1]):
-            text = axs[1, 0].text(j, i, f"{QV_scored_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
-    axs[1, 0].set_aspect('equal')
-    axs[1, 0].set_title(f"MI between the Q and V heads")
-    axs[1, 0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
-    axs[1, 0].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+        img = axs[1, 0].imshow(QV_scored_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+        for i in range(QV_scored_MI_estimate.shape[0]):
+            for j in range(QV_scored_MI_estimate.shape[1]):
+                text = axs[1, 0].text(j, i, f"{QV_scored_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+        axs[1, 0].set_aspect('equal')
+        axs[1, 0].set_title(f"MI between the Q and weighted V heads")
+        axs[1, 0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[1, 0].set_yticks(range(0, len(input_words)), input_words, rotation=0)
 
-    img = axs[1, 1].imshow(KV_scored_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
-    for i in range(KV_scored_MI_estimate.shape[0]):
-        for j in range(KV_scored_MI_estimate.shape[1]):
-            text = axs[1, 1].text(j, i, f"{KV_scored_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
-    axs[1, 1].set_aspect('equal')
-    axs[1, 1].set_title(f"MI between the K and V heads")
-    axs[1, 1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
-    axs[1, 1].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+        img = axs[1, 1].imshow(KV_scored_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+        for i in range(KV_scored_MI_estimate.shape[0]):
+            for j in range(KV_scored_MI_estimate.shape[1]):
+                text = axs[1, 1].text(j, i, f"{KV_scored_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+        axs[1, 1].set_aspect('equal')
+        axs[1, 1].set_title(f"MI between the K and weighted V heads")
+        axs[1, 1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[1, 1].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+
+        fig.subplots_adjust(hspace=0.5)
+    else:
+        max_val = np.max([np.max(QV_scored_MI_estimate), np.max(KV_scored_MI_estimate)])
+        fig, axs = plt.subplots(1,2)
+        img = axs[0].imshow(QV_scored_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+        for i in range(QV_scored_MI_estimate.shape[0]):
+            for j in range(QV_scored_MI_estimate.shape[1]):
+                text = axs[0].text(j, i, f"{QV_scored_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+        axs[0].set_aspect('equal')
+        axs[0].set_title(f"MI between the Q and weighted V heads")
+        axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[0].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+
+        img = axs[1].imshow(KV_scored_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+        for i in range(KV_scored_MI_estimate.shape[0]):
+            for j in range(KV_scored_MI_estimate.shape[1]):
+                text = axs[1].text(j, i, f"{KV_scored_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+        axs[1].set_aspect('equal')
+        axs[1].set_title(f"MI between the K and weighted V heads")
+        axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+        axs[1].set_yticks(range(0, len(input_words)), input_words, rotation=0)
 
     fig.colorbar(img, ax=axs.ravel().tolist())
     fig.suptitle(f"Mutual Information between Q and K heads and scored V head\nfor epoch {epoch}, head {head_id}, attention layer {attention_layer}, sentence {sentence_id}")

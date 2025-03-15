@@ -8,6 +8,7 @@ import sys
 import numpy as np
 from pathlib import Path
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import torch
 from tqdm import tqdm
 
@@ -49,20 +50,30 @@ def plot_MI_bars(QK_head_mi_dict, word_list):
         # Plot Q-K MI
         top_vals, N_top_indices = get_top_N_values(QK_MI, 3)
         top_indices = np.argwhere(QK_MI >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
-        axs[0].bar(x_vals, QK_MI, color=bar_colors)
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
+        barplot = axs[0].bar(x_vals, QK_MI, color=bar_colors)
         axs[0].set_title("Q-K MI")
         axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
         axs[0].set_ylabel("Mutual Information")
+        for bar in barplot:
+            height = bar.get_height()
+            axs[0].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[0].spines[sp].set_visible(False)
 
         # Plot attention score
         top_vals, N_top_indices = get_top_N_values(attention_score, 3)
         top_indices = np.argwhere(attention_score >= min(top_vals)).squeeze().tolist()
-        bar_colors = ['red' if i in top_indices else 'blue' for i in range(len(input_words))]
-        axs[1].bar(x_vals, attention_score, color=bar_colors)
+        bar_colors = ['red' if i in top_indices else 'gray' for i in range(len(input_words))]
+        barplot = axs[1].bar(x_vals, attention_score, color=bar_colors)
         axs[1].set_title("Attention Score")
         axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
         axs[1].set_ylabel("Score")
+        for bar in barplot:
+            height = bar.get_height()
+            axs[1].text(bar.get_x() + bar.get_width()/2., height, f'{height:.2f}', ha='center', va='bottom')
+        for sp in ['top', 'right']:
+            axs[1].spines[sp].set_visible(False)
 
         fig.suptitle(f"Comparison of Q-K MI and Attention Score for word '{word}'")
         plt.subplots_adjust(hspace=0.5)
@@ -73,12 +84,14 @@ def plot_QK_head_mi_attn_scores(QK_head_mi_dict, head_id, epoch, attention_layer
     attention_scores = QK_head_mi_dict["attention_scores"]
 
     QK_MI_estimate = QK_head_mi["QK_MI_estimate"]
+    QK_KLD_estimate = QK_head_mi["QK_KLD_estimate"]
     input_words = QK_head_mi["input_words"]
 
-    max_val = np.max([np.max(QK_MI_estimate), np.max(attention_scores)])
+    # max_val = np.max([np.max(QK_MI_estimate), np.max(QK_KLD_estimate), np.max(attention_scores)])
 
-    fig, axs = plt.subplots(1,2)
-    img = axs[0].imshow(QK_MI_estimate.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+    fig, axs = plt.subplots(1,3)
+    # img = axs[0].imshow(QK_MI_estimate, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
+    img = axs[0].imshow(QK_MI_estimate, cmap=plt.cm.Wistia)
     for i in range(QK_MI_estimate.shape[0]):
         for j in range(QK_MI_estimate.shape[1]):
             text = axs[0].text(j, i, f"{QK_MI_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
@@ -86,17 +99,37 @@ def plot_QK_head_mi_attn_scores(QK_head_mi_dict, head_id, epoch, attention_layer
     axs[0].set_title(f"MI between the Q and K heads")
     axs[0].set_xticks(range(0, len(input_words)), input_words, rotation=90)
     axs[0].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+    divider = make_axes_locatable(axs[0])
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    fig.colorbar(img, cax=cax)
 
-    img = axs[1].imshow(attention_scores.T, vmin=0, vmax=max_val, cmap=plt.cm.Wistia)
-    for i in range(attention_scores.shape[0]):
-        for j in range(attention_scores.shape[1]):
-            text = axs[1].text(j, i, f"{attention_scores[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
-    axs[0].set_aspect('equal')
-    axs[1].set_title(f"Attention Scores")
+    # img = axs[1].imshow(QK_KLD_estimate.T, cmap=plt.cm.Wistia)
+    img = axs[1].imshow(QK_KLD_estimate, cmap=plt.cm.jet)
+    for i in range(QK_KLD_estimate.shape[0]):
+        for j in range(QK_KLD_estimate.shape[1]):
+            text = axs[1].text(j, i, f"{QK_KLD_estimate[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+    axs[1].set_aspect('equal')
+    axs[1].set_title(f"KLD between the Q and K heads")
     axs[1].set_xticks(range(0, len(input_words)), input_words, rotation=90)
     axs[1].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+    divider = make_axes_locatable(axs[1])
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    fig.colorbar(img, cax=cax)
 
-    fig.colorbar(img, ax=axs.ravel().tolist())
+
+    img = axs[2].imshow(attention_scores, cmap=plt.cm.Wistia)
+    for i in range(attention_scores.shape[0]):
+        for j in range(attention_scores.shape[1]):
+            text = axs[2].text(j, i, f"{attention_scores[i, j]:.2f}", horizontalalignment="center", verticalalignment="center", color="black", fontsize=6)
+    axs[2].set_aspect('equal')
+    axs[2].set_title(f"Attention Scores")
+    axs[2].set_xticks(range(0, len(input_words)), input_words, rotation=90)
+    axs[2].set_yticks(range(0, len(input_words)), input_words, rotation=0)
+    divider = make_axes_locatable(axs[2])
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    fig.colorbar(img, cax=cax)
+
+    # fig.colorbar(img, ax=axs.ravel().tolist())
     fig.suptitle(f"Mutual Information between Q and K heads and Attention Scores\nfor epoch {epoch}, head {head_id}, attention layer {attention_layer}, sentence {sentence_id}")
     plt.show(block=True)
 
@@ -113,6 +146,7 @@ def compute_QK_head_mi(analyzer, QKV_head_database, head_id, attention_layer, se
     # Dimensions of the MI matrix will be N_rows x N_rows
     N_rows = Q_head.shape[0] 
     QK_MI_estimate = np.zeros((N_rows, N_rows))
+    QK_KLD_estimate = np.zeros((N_rows, N_rows))
 
     i = np.arange(0, N_rows, 1)
     j = np.arange(0, N_rows, 1)
@@ -127,13 +161,17 @@ def compute_QK_head_mi(analyzer, QKV_head_database, head_id, attention_layer, se
         _, MI_data = MI_estimator.kernel_MI(KDE_module='sklearn')
         MI = MI_data["MI"]
         QK_MI_estimate[i, j] = MI
+        P_X, P_Y = MI_estimator.pdf_softmax()
+        # JSD = MI_estimator.JS_divergence(P_X, P_Y)
+        KLD = MI_estimator.KL_divergence(P_X, P_Y)
+        QK_KLD_estimate[i, j] = KLD
 
     input_words = list()
     for token in sentence_tokens:
         input_words.append(analyzer.get_src_word_from_token(token))
 
     QKV_head_mi = \
-        dict(QK_MI_estimate=QK_MI_estimate, input_words=input_words)
+        dict(QK_MI_estimate=QK_MI_estimate, QK_KLD_estimate = QK_KLD_estimate, input_words=input_words)
 
     return QKV_head_mi
 

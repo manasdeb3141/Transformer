@@ -245,7 +245,7 @@ def main():
     analyzer.run()
 
     # Parameters of the extraction
-    epochs_to_analyze = [0, 3, 6, 9, 10, 11, 14, 17, 19]
+    epochs_to_analyze = np.arange(0, 20, 1)
     attention_layers = [0, 1, 3, 5]
 
     for epoch in epochs_to_analyze:
