@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 from pdf_estimator import PdfEstimator
 from scipy.integrate import simpson
+from scipy.stats import wasserstein_distance
 from typing import Tuple
 
 from npeet import entropy_estimators as ee
@@ -149,6 +150,9 @@ class MutualInfoEstimator:
 
         return P_X, P_Y
 
+    def wasser_dist(self) -> float:
+        wasserstein_distance(np.arange(self._X.shape[0]), np.arange(self._Y.shape[0]), self._X, self._Y)
+
     def set_inputs(self, X : np.ndarray, Y : np.ndarray) -> None:
         if len(X.shape) < 2:
             self._X = np.expand_dims(X, axis=1)
@@ -160,7 +164,7 @@ class MutualInfoEstimator:
             else:
                 raise ValueError("X and Y should be row vectors")
 
-    def kernel_MI(self, N_points : int = 100, KDE_module : str = 'statsmodel', continuous=True) -> float:
+    def kernel_MI(self, N_points : int = 100, KDE_module : str = 'sklearn', continuous=True) -> float:
         self._KDE_est_module = KDE_module
 
         if continuous:
