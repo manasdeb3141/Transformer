@@ -164,12 +164,12 @@ class MutualInfoEstimator:
             else:
                 raise ValueError("X and Y should be row vectors")
 
-    def kernel_MI(self, N_points : int = 100, KDE_module : str = 'sklearn', continuous=True) -> float:
+    def kernel_MI(self, N_points : int = 100, KDE_module : str = 'sklearn', same_range : bool = False, continuous : bool =True) -> float:
         self._KDE_est_module = KDE_module
 
         if continuous:
             # Calculate the PDF based on Kernel Density Estimation
-            prob_data = self.__estimate_pdf(N_points, same_range=False, continuous=True)
+            prob_data = self.__estimate_pdf(N_points, same_range=same_range, continuous=True)
             P_XY = prob_data["P_XY"]
             P_X = prob_data["P_X"]
             P_Y = prob_data["P_Y"]
@@ -279,13 +279,11 @@ class MutualInfoEstimator:
             P_Y = prob_data["P_Y"]
 
         # Compute the Battacharyya Coefficient
-        BC = simpson(np.sqrt(P_X * P_Y))
+        integ_result = simpson(np.sqrt(P_X * P_Y), axis=0)
+        BC = integ_result[0]
 
         # Compute the Bhattacharyya distance
-        if BC == 0:
-            BD = np.inf
-        else:
-            BD = -np.log(BC)
+        BD = -np.log(BC)
 
         BC_data = dict()
         BC_data["BC"] = BC
