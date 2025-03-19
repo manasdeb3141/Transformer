@@ -295,15 +295,15 @@ def plot_softmax_distances(QKV_dict: dict, dist_dict: dict, input_words: list, e
 
 def plot_KDE_distances(QKV_dict, dist_dict, input_words, epoch, enc_layer, sentence_id) -> None:
     Q_prime_probs = dist_dict["Q_prime_probs"]
-    Q_x_coord = dist_dict["Q_x_coord"]
+    Q_prime_coord = dist_dict["Q_prime_coord"]
     Q_prime_wdist = dist_dict["Q_prime_wdist"]
     Q_prime_bhattacharya = dist_dict["Q_prime_bhattacharya"]
     K_prime_probs = dist_dict["K_prime_probs"]
-    K_x_coord = dist_dict["K_x_coord"]
+    K_prime_coord = dist_dict["K_prime_coord"]
     K_prime_wdist = dist_dict["K_prime_wdist"]
     K_prime_bhattacharya = dist_dict["K_prime_bhattacharya"]
     V_prime_probs = dist_dict["V_prime_probs"]
-    V_x_coord = dist_dict["V_x_coord"]
+    V_prime_coord = dist_dict["V_prime_coord"]
     V_prime_wdist = dist_dict["V_prime_wdist"]
     V_prime_bhattacharya = dist_dict["V_prime_bhattacharya"]
 
@@ -324,9 +324,11 @@ def plot_KDE_distances(QKV_dict, dist_dict, input_words, epoch, enc_layer, sente
 
         P_X = Q_prime_probs[row_tuple[0], :]
         P_Y = Q_prime_probs[row_tuple[1], :]
+        x1_coord = Q_prime_coord[row_tuple[0]]
+        x2_coord = Q_prime_coord[row_tuple[1]]
 
-        sns.lineplot(x=Q_x_coord, y=P_X, label=f'P({X_word})', ax=axs[i, 0])
-        sns.lineplot(x=Q_x_coord, y=P_Y, label=f'P({Y_word})', ax=axs[i, 0])
+        sns.lineplot(x=x1_coord, y=P_X, label=f'P({X_word})', ax=axs[i, 0])
+        sns.lineplot(x=x2_coord, y=P_Y, label=f'P({Y_word})', ax=axs[i, 0])
         axs[i, 0].legend()
         axs[i, 0].set_xlabel('Vector Dimension')
         axs[i, 0].set_ylabel('Probability')
@@ -334,9 +336,11 @@ def plot_KDE_distances(QKV_dict, dist_dict, input_words, epoch, enc_layer, sente
 
         P_X = K_prime_probs[row_tuple[0], :]
         P_Y = K_prime_probs[row_tuple[1], :]
+        x1_coord = K_prime_coord[row_tuple[0]]
+        x2_coord = K_prime_coord[row_tuple[1]]
 
-        sns.lineplot(x=K_x_coord, y=P_X, label=f'P({X_word})', ax=axs[i, 1])
-        sns.lineplot(x=K_x_coord, y=P_Y, label=f'P({Y_word})', ax=axs[i, 1])
+        sns.lineplot(x=x1_coord, y=P_X, label=f'P({X_word})', ax=axs[i, 1])
+        sns.lineplot(x=x2_coord, y=P_Y, label=f'P({Y_word})', ax=axs[i, 1])
         axs[i, 1].legend()
         axs[i, 1].set_xlabel('Vector Dimension')
         axs[i, 1].set_ylabel('Probability')
@@ -344,9 +348,11 @@ def plot_KDE_distances(QKV_dict, dist_dict, input_words, epoch, enc_layer, sente
 
         P_X = V_prime_probs[row_tuple[0], :]
         P_Y = V_prime_probs[row_tuple[1], :]
+        x1_coord = V_prime_coord[row_tuple[0]]
+        x2_coord = V_prime_coord[row_tuple[1]]
 
-        sns.lineplot(x=V_x_coord, y=P_X, label=f'P({X_word})', ax=axs[i, 2])
-        sns.lineplot(x=V_x_coord, y=P_Y, label=f'P({Y_word})', ax=axs[i, 2])
+        sns.lineplot(x=x1_coord, y=P_X, label=f'P({X_word})', ax=axs[i, 2])
+        sns.lineplot(x=x2_coord, y=P_Y, label=f'P({Y_word})', ax=axs[i, 2])
         axs[i, 2].legend()
         axs[i, 2].set_xlabel('Vector Dimension')
         axs[i, 2].set_ylabel('Probability')
@@ -368,6 +374,7 @@ def plot_KDE_distances(QKV_dict, dist_dict, input_words, epoch, enc_layer, sente
     K_prime = QKV_dict["K_prime"]
     k_prime = K_prime[row_tuple[0]]
     P_K_prime = K_prime_probs[row_tuple[0], :]
+    x_coord = K_prime_coord[row_tuple[0]]
 
     # ax.bar(dim_axis, np.abs(q_prime), color='blue', label='K\'')
     N_bins = P_K_prime.shape[0]
@@ -377,7 +384,7 @@ def plot_KDE_distances(QKV_dict, dist_dict, input_words, epoch, enc_layer, sente
     ax.set_title(f"K' and P(K') for the word '{X_word}'")
     ax.legend()
     ax_twin = ax.twinx()
-    ax_twin.plot(K_x_coord, P_K_prime, color='red', label='P_K\'')
+    ax_twin.plot(x_coord, P_K_prime, color='red', label='P_K\'')
     ax_twin.set_ylabel('Probability')
     plt.show(block=True)
 
@@ -672,14 +679,15 @@ def process_QKV_prime_KDE_distances(KDE_dict: dict) -> dict:
     data = Q_prime_prob_matrix[0][0]
     prob_data = data["prob_data"]
     P_Q = prob_data["P_X"]
-    Q_x_coord = prob_data["xpos"]
 
     Q_prime_probs = np.zeros((N_rows, P_Q.shape[0]))
+    Q_prime_coord = list()
     for i in range(N_rows):
         data = Q_prime_prob_matrix[i][0]
         prob_data = data["prob_data"]
         P_Q = prob_data["P_X"]
         Q_prime_probs[i, :] = P_Q
+        Q_prime_coord.append(prob_data["xpos"])
 
     tmp_Q_prime_probs = Q_prime_probs.copy()
     idx = np.where(Q_prime_probs < PROB_THRESHOLD)
@@ -699,14 +707,15 @@ def process_QKV_prime_KDE_distances(KDE_dict: dict) -> dict:
     data = K_prime_prob_matrix[0][0]
     prob_data = data["prob_data"]
     P_K = prob_data["P_X"]
-    K_x_coord = prob_data["xpos"]
 
     K_prime_probs = np.zeros((N_rows, P_K.shape[0]))
+    K_prime_coord = list()
     for i in range(N_rows):
         data = K_prime_prob_matrix[i][0]
         prob_data = data["prob_data"]
         P_K = prob_data["P_X"]
         K_prime_probs[i, :] = P_K
+        K_prime_coord.append(prob_data["xpos"])
 
     tmp_K_prime_probs = K_prime_probs.copy()
     idx = np.where(K_prime_probs < PROB_THRESHOLD)
@@ -726,14 +735,15 @@ def process_QKV_prime_KDE_distances(KDE_dict: dict) -> dict:
     data = V_prime_prob_matrix[0][0]
     prob_data = data["prob_data"]
     P_V = prob_data["P_X"]
-    V_x_coord = prob_data["xpos"]
 
     V_prime_probs = np.zeros((N_rows, P_V.shape[0]))
+    V_prime_coord = list()
     for i in range(N_rows):
         data = V_prime_prob_matrix[i][0]
         prob_data = data["prob_data"]
         P_V = prob_data["P_X"]
         V_prime_probs[i, :] = P_V
+        V_prime_coord.append(prob_data["xpos"])
 
     tmp_V_prime_probs = V_prime_probs.copy()
     idx = np.where(V_prime_probs < PROB_THRESHOLD)
@@ -746,15 +756,15 @@ def process_QKV_prime_KDE_distances(KDE_dict: dict) -> dict:
     V_prime_bhattacharya = compute_bhattacharya_coefficient(tmp_V_prime_probs, tmp_V_prime_probs)
 
     return dict(Q_prime_probs=Q_prime_probs, 
-                Q_x_coord=Q_x_coord,
+                Q_prime_coord=Q_prime_coord,
                 Q_prime_wdist=Q_prime_wdist, 
                 Q_prime_bhattacharya=Q_prime_bhattacharya,
                 K_prime_probs=K_prime_probs,
-                K_x_coord=K_x_coord,
+                K_prime_coord=K_prime_coord,
                 K_prime_wdist=K_prime_wdist,
                 K_prime_bhattacharya=K_prime_bhattacharya,
                 V_prime_probs=V_prime_probs,
-                V_x_coord=V_x_coord,
+                V_prime_coord=V_prime_coord,
                 V_prime_wdist=V_prime_wdist,
                 V_prime_bhattacharya=V_prime_bhattacharya)
 

@@ -104,7 +104,7 @@ def KDE_mutual_info(X_mat: np.ndarray, Y_mat: np.ndarray, symmetric=False) -> np
         Y = Y_mat[j]
         MI_estimator = MutualInfoEstimator(X, Y)
         prob_data, MI_data = MI_estimator.kernel_MI(same_range=True, KDE_module='sklearn', continuous=True)
-        P_matrix[i][j] = dict(prob_data=prob_data, MI_data=MI_data, i=i, j=j)
+        P_matrix[i][j] = dict(prob_data=prob_data, MI_data=MI_data)
         MI = MI_data["MI"]
         MI_estimate[i, j] = MI
 
