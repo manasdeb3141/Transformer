@@ -244,7 +244,7 @@ class TransformerAnalyzer:
         QKV_dict = dict(Q=Q, K=K, V=V, Q_prime=Q_prime, K_prime=K_prime, V_prime=V_prime)
         return QKV_dict
 
-    def get_encoder_QKV_head(self, enc_layer : int, sentence_id : int, N_rows : int) -> dict:
+    def get_encoder_QKV_head(self, enc_layer : int, head_id : int, sentence_id : int, N_rows : int) -> dict:
         # Get the Q, K, and V head matrices and scored V matrix
         #  for the specific encoder layer for the specific input sentence
         match enc_layer:
@@ -268,12 +268,12 @@ class TransformerAnalyzer:
         V_head_full = enc_attn_input["value_head"].squeeze()
         V_scored_full = enc_attn_input["scored_value"].squeeze()
 
-        Q_head = Q_head_full[:,:N_rows]
-        K_head = K_head_full[:,:N_rows]
-        V_head = V_head_full[:,:N_rows]
-        V_scored = V_scored_full[:,:N_rows]
+        Q_heads = Q_head_full[:,:N_rows]
+        K_heads = K_head_full[:,:N_rows]
+        V_heads = V_head_full[:,:N_rows]
+        V_scored_heads = V_scored_full[:,:N_rows]
 
-        QKV_head_dict = dict(Q_head=Q_head, K_head=K_head, V_head=V_head, V_scored=V_scored)
+        QKV_head_dict = dict(Q_head=Q_heads[head_id], K_head=K_heads[head_id], V_head=V_heads[head_id], V_scored_head=V_scored_heads[head_id])
         return QKV_head_dict
 
     def get_encoder_attention_scores(self, enc_layer : int, head : int, sentence_id : int, N_rows : int) -> np.array:

@@ -16,21 +16,26 @@ class MutualInfoEstimator:
         # Default KDE estmator module
         self._KDE_est_module = 'statsmodel'
 
-        # X and Y are expected to be row vectors (1-D arrays)
+        # X and Y are expected to be column vectors (1-D arrays)
         if (X is not None) and (Y is not None):
-            if len(X.shape) < 2:
-                self._X = np.expand_dims(X, axis=1)
-                self._Y = np.expand_dims(Y, axis=1)
-            elif len(X.shape) == 2:
-                if X.shape[1] == 1 and Y.shape[1] == 1:
-                    self._X = X
-                    self._Y = Y
-                else:
-                    raise ValueError("X and Y should be row vectors")
+            self._X, self._Y = self.__make_column_vectors(X, Y)
         else:
             self._X = None
             self._Y = None
 
+    def __make_column_vectors(self, X : np.ndarray, Y : np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        # X and Y are expected to be column vectors (1-D arrays)
+        if len(X.shape) < 2:
+            X_colvec = np.expand_dims(X, axis=1)
+            Y_colvec = np.expand_dims(Y, axis=1)
+        elif len(X.shape) == 2:
+            if X.shape[1] == 1 and Y.shape[1] == 1:
+                X_colvec = X
+                Y_colvec = Y
+            else:
+                raise ValueError("X and Y should be column vectors")
+
+        return X_colvec, Y_colvec
 
     def __estimate_pdf(self, num_points : int, same_range=False, continuous : bool = True) -> np.ndarray:
         xy_samples = np.hstack([self._X, self._Y])
@@ -129,19 +134,32 @@ class MutualInfoEstimator:
         norm_MI = MI / max(H_X, H_Y)
         return norm_MI
 
-    def KL_divergence(self, P_X : np.ndarray, P_Y : np.ndarray) -> float:
+    def KL_divergence(self, P_X : np.ndarray, P_Y : np.ndarray, continuous=True) -> float:
+        assert P_X.shape == P_Y.shape, "The shape of P_X and P_Y should be the same"
+
+        # Make the probability vectors column vectors
+        P_X, P_Y = self.__make_column_vectors(P_X, P_Y)
+
         # Calculate the Kullback-Leibler divergence
         P_Y[P_Y == 0] = np.finfo(float).eps
-        # KL_div = simpson(np.squeeze(P_X * np.ma.log2(P_X / P_Y).filled(0)))
-        KL_div = np.sum(np.squeeze(P_X * np.ma.log2(P_X / P_Y).filled(0)))
+
+        if continuous:
+            KL_div = simpson(np.squeeze(P_X * np.ma.log2(P_X / P_Y).filled(0)), axis=0)
+        else:
+            KL_div = np.sum(np.squeeze(P_X * np.ma.log2(P_X / P_Y).filled(0)))
 
         if KL_div < 0:
             KL_div = 0
 
         return KL_div    
 
-    def JS_divergence(self, P_X : np.ndarray, P_Y : np.ndarray) -> float:
-        JS_div = (0.5 * self.KL_divergence(P_X, (P_X + P_Y)/2)) + (0.5 * self.KL_divergence(P_Y, (P_X + P_Y)/2))
+    def JS_divergence(self) -> float:
+        # self._X and self._Y are column vectors of probabilities
+        JS_div = (0.5 * self.KL_divergence(self._X, (self._X + self._Y)/2, False)) + (0.5 * self.KL_divergence(self._Y, (self._X + self._Y)/2, False))
+
+        if JS_div > 1.0:
+            JS_div = 1.0
+
         return JS_div
 
     def pdf_softmax(self, beta=1.0) -> Tuple[np.ndarray, np.ndarray]:

@@ -17,8 +17,9 @@ from ModelConfig import LangModelConfig
 from TransformerAnalyzer import TransformerAnalyzer
 
 # Functions implemented by this application
-from analyze_encoder_QKV import analyze_encoder_QKV
+# from analyze_encoder_QKV import analyze_encoder_QKV
 from analyze_encoder_QKV_prime import analyze_encoder_QKV_prime
+from analyze_encoder_QKV_head import analyze_encoder_QKV_head
 
 def main():
     parser = argparse.ArgumentParser()
@@ -54,21 +55,22 @@ def main():
 
         case 3:
             # Analyze Q, K, V inputs and Q', K', V' projections
-            analyze_encoder_QKV(analyzer)
+            # analyze_encoder_QKV(analyzer)
+            pass
 
         case 4:
             # Analyze Q', K', V' projections
             analyze_encoder_QKV_prime(analyzer)
 
-        case 4:
-            # analyze_encoder_QKV_heads(analyzer)
-            pass
-
         case 5:
-            # analyze_encoder_attention_scores(analyzer)
+            analyze_encoder_QKV_head(analyzer)
             pass
 
         case 6:
+            # analyze_encoder_attention_scores(analyzer)
+            pass
+
+        case 7:
             # analyze_encoder_feedforward(analyzer)
             pass
 

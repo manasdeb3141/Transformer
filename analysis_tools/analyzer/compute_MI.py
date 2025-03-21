@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from mutual_info_estimator import MutualInfoEstimator
+from probability_distances import compute_vec_wasserstein_distance
 
 
 def make_col_vectors(X : np.ndarray, Y : np.ndarray) -> np.ndarray:
@@ -78,11 +79,12 @@ def compute_mutual_info(X_mat: np.ndarray, Y_mat: np.ndarray, symmetric=False) -
     return MI_estimate
 
 
-def KDE_mutual_info(X_mat: np.ndarray, Y_mat: np.ndarray, symmetric=False) -> np.ndarray:
+def KDE_mutual_info_WSD(X_mat: np.ndarray, Y_mat: np.ndarray, symmetric=False) -> np.ndarray:
     N_rows = X_mat.shape[0]
 
-    # Initialize the mutual information matrix
+    # Initialize the mutual information and Wasserstein distance matrix
     MI_estimate = np.zeros((N_rows, N_rows))
+    WSD = np.zeros((N_rows, N_rows))
 
     # The probability matrix is a 2-D array. Each element contains a dictionary 
     # of probability values for the joint and marginal distributions, entropy, and mutual information
@@ -107,6 +109,9 @@ def KDE_mutual_info(X_mat: np.ndarray, Y_mat: np.ndarray, symmetric=False) -> np
         P_matrix[i][j] = dict(prob_data=prob_data, MI_data=MI_data)
         MI = MI_data["MI"]
         MI_estimate[i, j] = MI
+        P_X = prob_data["P_X"]
+        P_Y = prob_data["P_Y"]
+        WSD[i, j] = compute_vec_wasserstein_distance(P_X, P_Y)
 
     if symmetric:
         # The upper and lower triangular matrix values are the same
@@ -117,8 +122,9 @@ def KDE_mutual_info(X_mat: np.ndarray, Y_mat: np.ndarray, symmetric=False) -> np
         ij_pos = np.vstack((lower_indices[0], lower_indices[1])).T
         for i, j in ij_pos:
             P_matrix[i][j] = P_matrix[j][i]
+            WSD[i, j] = WSD[j][i]
 
-    return P_matrix, MI_estimate
+    return P_matrix, MI_estimate, WSD
 
 
 def KDE_mutual_info_vec(X_vec: np.ndarray, Y_vec: np.ndarray) -> np.ndarray:
@@ -128,6 +134,7 @@ def KDE_mutual_info_vec(X_vec: np.ndarray, Y_vec: np.ndarray) -> np.ndarray:
 
     # Initialize the mutual information matrix
     MI_estimate = np.zeros((N_rows, 1))
+    WSD = np.zeros((N_rows, 1))
 
     # The probability matrix is a 2-D array. Each element contains a dictionary 
     # of probability values for the joint and marginal distributions, entropy, and mutual information
@@ -139,5 +146,8 @@ def KDE_mutual_info_vec(X_vec: np.ndarray, Y_vec: np.ndarray) -> np.ndarray:
         P_matrix[i] = dict(prob_data=prob_data, MI_data=MI_data)
         MI = MI_data["MI"]
         MI_estimate[i] = MI
+        P_X = prob_data["P_X"]
+        P_Y = prob_data["P_Y"]
+        WSD[i] = compute_vec_wasserstein_distance(P_X, P_Y)
 
-    return P_matrix, MI_estimate
+    return P_matrix, MI_estimate, WSD

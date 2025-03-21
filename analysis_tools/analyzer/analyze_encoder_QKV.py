@@ -16,8 +16,8 @@ import pandas as pd
 
 # Class implemented by this application
 from mutual_info_estimator import MutualInfoEstimator
-from compute_distances import compute_bhattacharya_coefficient, compute_wasserstein_distance
-from compute_MI import compute_mutual_info, KDE_mutual_info
+from probability_distances import compute_bhattacharya_coefficient, compute_wasserstein_distance
+from compute_MI import compute_mutual_info, KDE_mutual_info_WSD
 
 # ---------------------------------- Plotting routines start --------------------------------
 
